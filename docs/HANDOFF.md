@@ -145,7 +145,6 @@ dsh-latex-studio/
 │   ├── install.mjs             ★ 一条命令安装：pack → 注册 profile → 镜像 → 自检
 │   ├── doctor.mjs              ★ 健康自检：文件/注册/profile/影子技能/工具链
 │   ├── verify-pdf-read.mjs     页图通道体检（纯 Node，三态结论）
-│   ├── install-skills.mjs      兜底：把技能放进发现根（正常不需要）
 │   ├── vendor-paperfit-specs.mjs 可复现地 vendor 上游规范 + 来源哈希
 │   └── _p0/                    【不在发布白名单】调研证据，有意不发布
 └── docs/
@@ -581,13 +580,7 @@ console.log('sync:', !(res&&res.then), '| registered:', JSON.stringify(res.regis
 > 本插件那 3 个 `latex-*` 技能正是因此空转了整个 0.1.0 周期。DSH 是围绕插件设计的，
 > 插件已装载就直接注册，不必再绕文件发现一圈。详见 `docs/DESIGN-REVIEW.md` §4.2。
 
-`tools/install-skills.mjs` 只是**兜底**（插件不在运行、但想在编辑器/CI 里读技能时用）；
-默认不要装，双重来源可能互相遮蔽。
-
-```powershell
-node tools/install-skills.mjs --check      # 只报告
-node tools/install-skills.mjs --uninstall  # 撤掉兜底安装
-```
+**0.2.0：这个兜底已删除。** 它当年是为「技能不进上下文」那个问题写的，问题既然已经由插件自注册解决，留着只会造成两套来源互相遮蔽。不用插件时想读技能，直接打开 `skills/<名字>/SKILL.md` 即可。
 
 新增技能时请确保：目录名 = frontmatter 的 `name`，且都是 kebab-case。
 `test/skillpack.test.mjs` 会钉住这两条，也会在 `apply()` 漏注册时变红。

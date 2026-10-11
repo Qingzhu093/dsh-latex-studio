@@ -6,7 +6,7 @@
     "license": "MIT",
     "repository": "https://github.com/OpenRaiser/PaperFit",
     "paper": "arXiv:2605.10341",
-    "note": "Vendored as specification text. Algorithm ports are noted separately in THIRD_PARTY_NOTICES.md."
+    "note": "Reference text for humans. Operational knowledge lives in this package own skills/latex-*; algorithm ports are noted in THIRD_PARTY_NOTICES.md."
   },
   "generatedBy": "tools/vendor-paperfit-specs.mjs",
   "generatedAt": "2026-10-11T02:52:59.209Z",
@@ -52,62 +52,6 @@
       "sourceSha": "b7489ffc05ff85717ac0a39f5049501bbd4409148e52ff014f9989ec88ea3af8",
       "transform": "none",
       "bytes": 13179
-    },
-    {
-      "dest": "skills/paperfit-taxonomy-vto/SKILL.md",
-      "source": "skills/taxonomy-vto/SKILL.md",
-      "sourceSha": "549138e8121ce619b414e558ca176299a814bce44c5e7d93358e68ec928c165a",
-      "transform": "frontmatter",
-      "bytes": 18997
-    },
-    {
-      "dest": "skills/paperfit-space-util-fixer/SKILL.md",
-      "source": "skills/space-util-fixer/SKILL.md",
-      "sourceSha": "842866c1f0d019e3c422c9d867a1211b6dfd1059268c8c9a886dc112231f6a1f",
-      "transform": "frontmatter",
-      "bytes": 11263
-    },
-    {
-      "dest": "skills/paperfit-float-optimizer/SKILL.md",
-      "source": "skills/float-optimizer/SKILL.md",
-      "sourceSha": "ebcdbe947306bf0a786e9304112543323de961a475240f9abf324ad0e5e5a697",
-      "transform": "frontmatter",
-      "bytes": 11376
-    },
-    {
-      "dest": "skills/paperfit-consistency-polisher/SKILL.md",
-      "source": "skills/consistency-polisher/SKILL.md",
-      "sourceSha": "8d9eefa491c1e2d0be69973f715bc2bb9af203bf98a305b37fa7e7befdec1a6d",
-      "transform": "frontmatter",
-      "bytes": 10836
-    },
-    {
-      "dest": "skills/paperfit-overflow-repair/SKILL.md",
-      "source": "skills/overflow-repair/SKILL.md",
-      "sourceSha": "6debe42611c8bf2f9359c39100afc200d8ec64755acdcdeaa2283a5b4ef98f0f",
-      "transform": "frontmatter",
-      "bytes": 9024
-    },
-    {
-      "dest": "skills/paperfit-template-migrator/SKILL.md",
-      "source": "skills/template-migrator/SKILL.md",
-      "sourceSha": "21bfe2dbf218ddf0545aade50d10eb63b7390ed5cc4b771394fb81bc5687239e",
-      "transform": "frontmatter",
-      "bytes": 9349
-    },
-    {
-      "dest": "skills/paperfit-visual-inspector/SKILL.md",
-      "source": "skills/visual-inspector/SKILL.md",
-      "sourceSha": "5466d344ac3dcfbb33a24b411fb04d41a41555cf4a26467e432cdd0475f268fa",
-      "transform": "frontmatter",
-      "bytes": 8965
-    },
-    {
-      "dest": "skills/paperfit-writing-polish/SKILL.md",
-      "source": "skills/writing-polish/SKILL.md",
-      "sourceSha": "c33e3623263dd1e5b1b837a17aa7edca1dd2dcbbbd539bb411f678ff85a02d1c",
-      "transform": "frontmatter",
-      "bytes": 11215
     },
     {
       "dest": "docs/upstream/paperfit/CLAUDE.md",
@@ -165,5 +109,6 @@
       "transform": "none",
       "bytes": 1065
     }
-  ]
+  ],
+  "posture": "reference-only: upstream prose is NOT registered as DSH skills in 0.2.0+"
 }

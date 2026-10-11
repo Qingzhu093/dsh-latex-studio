@@ -1,21 +1,23 @@
 #!/usr/bin/env node
 /**
- * Vendor PaperFit's agent/skill specification text into this package.
+ * Vendor PaperFit's specification text into this package as READ-ONLY REFERENCE.
  *
- * WHY A SCRIPT AND NOT A COPY-PASTE
- * ---------------------------------
- * The vendored text is ~100 KB of upstream specification. Hand-copying it once
- * guarantees the next reader cannot tell which upstream version it came from or
- * reproduce it. This script records source, version, source hash and destination
- * for every file, writes `docs/upstream/paperfit/MANIFEST.json`, and can re-run
- * idempotently (`--check` verifies that the tree still matches the manifest).
+ * POSTURE (changed in 0.2.0)
+ * --------------------------
+ * Upstream prose is **not** shipped as DSH skills any more. Registering it made
+ * the model read a foreign contract (`data/pages/`, 220 DPI, `/check-visual`,
+ * orchestrator/quality-gatekeeper roles) as the operating manual for THIS plugin,
+ * and keeping it byte-identical meant the plugin could never adapt it. The
+ * operating knowledge now lives in this package's own `skills/latex-*`, which we
+ * own and may edit freely.
  *
- * WHAT IT DOES NOT DO
- * -------------------
- * It never rewrites upstream prose. The only edit is a YAML frontmatter block
- * required by the DSH skill provider (`name` + `description`); the original body
- * follows byte-for-byte. Upstream skills have no frontmatter of their own, so
- * nothing is being replaced.
+ * What remains here is provenance: the upstream agent/command/reference text is
+ * vendored under `docs/upstream/paperfit/` for humans and for anyone who wants to
+ * read the original. `docs/` is deliberately NOT in the npm `files` whitelist, so
+ * the reference does not ship to users.
+ *
+ * This script records source, version, per-file source hash and destination in
+ * `docs/upstream/paperfit/MANIFEST.json`, and `--check` fails on any drift.
  *
  * Usage:
  *   node tools/vendor-paperfit-specs.mjs --from <paperfit-cli-dir>
@@ -32,7 +34,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const PKG = path.resolve(HERE, '..')
 const MANIFEST = path.join(PKG, 'docs', 'upstream', 'paperfit', 'MANIFEST.json')
 
-/** Upstream agents -> docs/upstream/paperfit/agents/ (human/agent reference). */
+/** Upstream agent specifications -> docs/upstream/paperfit/agents/. */
 const AGENT_FILES = [
   'orchestrator-agent.md',
   'rule-engine-agent.md',
@@ -42,23 +44,7 @@ const AGENT_FILES = [
   'quality-gatekeeper-agent.md',
 ]
 
-/**
- * Upstream skills -> skills/paperfit-<name>/SKILL.md.
- * Renamed with a `paperfit-` prefix so they can never collide with this
- * package's own `latex-*` skills in a shared discovery root.
- */
-const SKILL_DIRS = [
-  'taxonomy-vto',
-  'space-util-fixer',
-  'float-optimizer',
-  'consistency-polisher',
-  'overflow-repair',
-  'template-migrator',
-  'visual-inspector',
-  'writing-polish',
-]
-
-/** Other reference text. */
+/** Other upstream reference text -> docs/upstream/paperfit/. */
 const REFERENCE_FILES = [
   ['CLAUDE.md', 'CLAUDE.md'],
   ['.claude/commands/fix-layout.md', 'commands/fix-layout.md'],
@@ -71,44 +57,6 @@ const REFERENCE_FILES = [
 ]
 
 const sha256 = (buffer) => createHash('sha256').update(buffer).digest('hex')
-
-/**
- * Derive a one-line description from an upstream body: the first heading as the
- * subject, then the first prose paragraph. Kept mechanical so it is reproducible
- * and never editorialises upstream claims.
- */
-export function deriveDescription(body) {
-  const lines = String(body).split(/\r?\n/)
-  let heading = ''
-  let paragraph = []
-  let seenBody = false
-  for (const raw of lines) {
-    const line = raw.trim()
-    if (line === '') {
-      if (paragraph.length > 0) break
-      continue
-    }
-    if (!seenBody && /^#{1,3}\s+/.test(line)) {
-      heading = line.replace(/^#{1,3}\s+/, '').trim()
-      seenBody = true
-      continue
-    }
-    if (/^#{1,3}\s+/.test(line)) continue
-    if (/^[-*|>]/.test(line)) continue
-    seenBody = true
-    paragraph.push(line)
-    if (paragraph.join(' ').length > 160) break
-  }
-  const text = paragraph.join(' ').replace(/\s+/g, ' ').trim()
-  const head = heading || 'PaperFit upstream specification'
-  const summary = text.length > 0 ? text.slice(0, 220) : head
-  return head + '（vendored 自 PaperFit，MIT）' + (summary === head ? '' : '：' + summary)
-}
-
-/** Prepend the DSH-required frontmatter without touching the body. */
-export function withFrontmatter(name, description, body) {
-  return ['---', 'name: ' + name, 'description: ' + description, '---', '', String(body)].join('\n')
-}
 
 function readUtf8(file) {
   return fs.readFileSync(file, 'utf8')
@@ -128,19 +76,6 @@ function plan(fromDir) {
       transform: 'none',
     })
   }
-  for (const dir of SKILL_DIRS) {
-    const source = path.join(fromDir, 'skills', dir, 'SKILL.md')
-    const buffer = fs.readFileSync(source)
-    const text = buffer.toString('utf8')
-    const name = 'paperfit-' + dir
-    entries.push({
-      dest: path.join('skills', name, 'SKILL.md'),
-      content: Buffer.from(withFrontmatter(name, deriveDescription(text), text), 'utf8'),
-      sourceRel: 'skills/' + dir + '/SKILL.md',
-      sourceSha: sha256(buffer),
-      transform: 'frontmatter',
-    })
-  }
   for (const [rel, dest] of REFERENCE_FILES) {
     const source = path.join(fromDir, rel)
     if (!fs.existsSync(source)) continue
@@ -156,7 +91,7 @@ function plan(fromDir) {
   return entries
 }
 
-/** Confirm the tree still matches the manifest (no drift, no edits). */
+/** Confirm the reference tree still matches the manifest (no drift, no edits). */
 function check() {
   if (!fs.existsSync(MANIFEST)) {
     console.error('no manifest at ' + MANIFEST + '; run without --check first')
@@ -179,7 +114,7 @@ function check() {
     console.error('vendored spec drift:\n  ' + problems.join('\n  '))
     return 1
   }
-  console.log('paperfit specs OK: ' + manifest.files.length + ' file(s) match docs/upstream/paperfit/MANIFEST.json')
+  console.log('paperfit reference OK: ' + manifest.files.length + ' file(s) match docs/upstream/paperfit/MANIFEST.json')
   return 0
 }
 
@@ -192,8 +127,8 @@ function main() {
     console.error('usage: node tools/vendor-paperfit-specs.mjs --from <paperfit-cli-dir> | --check')
     return 2
   }
-  if (!fs.existsSync(path.join(fromDir, 'agents')) || !fs.existsSync(path.join(fromDir, 'skills'))) {
-    console.error('not a paperfit-cli directory (no agents/ and skills/): ' + fromDir)
+  if (!fs.existsSync(path.join(fromDir, 'agents'))) {
+    console.error('not a paperfit-cli directory (no agents/): ' + fromDir)
     return 2
   }
 
@@ -224,21 +159,22 @@ function main() {
 
   const manifest = {
     schemaVersion: 1,
+    posture: 'reference-only: upstream prose is NOT registered as DSH skills in 0.2.0+',
     upstream: {
       name: upstreamName,
       version: upstreamVersion,
       license: 'MIT',
       repository: 'https://github.com/OpenRaiser/PaperFit',
       paper: 'arXiv:2605.10341',
-      note: 'Vendored as specification text. Algorithm ports are noted separately in THIRD_PARTY_NOTICES.md.',
+      note: 'Reference text for humans. Operational knowledge lives in this package own skills/latex-*; algorithm ports are noted in THIRD_PARTY_NOTICES.md.',
     },
     generatedBy: 'tools/vendor-paperfit-specs.mjs',
     generatedAt: new Date().toISOString(),
     files,
   }
   fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n')
-  console.log('vendored ' + files.length + ' file(s) from ' + upstreamName + '@' + upstreamVersion)
-  for (const file of files) console.log('  ' + file.dest + '  (' + file.bytes + ' B, ' + file.transform + ')')
+  console.log('vendored ' + files.length + ' reference file(s) from ' + upstreamName + '@' + upstreamVersion)
+  for (const file of files) console.log('  ' + file.dest + '  (' + file.bytes + ' B)')
   return 0
 }
 

@@ -94,10 +94,11 @@ test('skillpack: an unreadable skills directory degrades with a reason', () => {
 // the shipped pack
 // ---------------------------------------------------------------------------
 
-test('skillpack: the shipped pack loads clean with all 11 skills', () => {
+test('skillpack: the shipped pack is exactly the three own latex-* skills', () => {
   const { skills, problems } = loadSkillPack()
   assert.deepEqual(problems, [], 'shipped skill pack has problems: ' + JSON.stringify(problems))
-  assert.equal(skills.length, 11)
+  assert.equal(skills.length, 3)
+  assert.deepEqual(skills.map((s) => s.name), ['latex-daily', 'latex-fix-catalog', 'latex-vto-loop'])
   for (const skill of skills) {
     assert.match(skill.name, SKILL_NAME_RE)
     assert.ok(skill.description.length > 10)
@@ -151,8 +152,8 @@ test('apply: registers the whole skill pack through ctx.skills (no installer)', 
   assert.equal(tools.length, 9, 'the 9 tools must still register')
   assert.equal(result.skills.delivered, true)
   assert.deepEqual(result.skills.problems, [])
-  assert.equal(result.skills.registered.length, 11)
-  assert.equal(service.registered.length, 11)
+  assert.equal(result.skills.registered.length, 3)
+  assert.equal(service.registered.length, 3)
   // Every registered skill must be a complete definition, not a stub.
   for (const skill of service.registered) {
     assert.match(skill.name, SKILL_NAME_RE)
@@ -161,19 +162,8 @@ test('apply: registers the whole skill pack through ctx.skills (no installer)', 
     assert.deepEqual(skill.invocation, { modelInvocable: true, userInvocable: true })
   }
   const names = service.registered.map((s) => s.name).sort()
-  assert.deepEqual(names, [
-    'latex-daily',
-    'latex-fix-catalog',
-    'latex-vto-loop',
-    'paperfit-consistency-polisher',
-    'paperfit-float-optimizer',
-    'paperfit-overflow-repair',
-    'paperfit-space-util-fixer',
-    'paperfit-taxonomy-vto',
-    'paperfit-template-migrator',
-    'paperfit-visual-inspector',
-    'paperfit-writing-polish',
-  ])
+  // 0.2.0: vendored upstream prose is reference-only and no longer registered.
+  assert.deepEqual(names, ['latex-daily', 'latex-fix-catalog', 'latex-vto-loop'])
 })
 
 test('apply: a host with no skills service still gets all 9 tools', () => {

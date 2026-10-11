@@ -165,7 +165,8 @@ bundle patch 不再携带 `config`（消灭"覆盖一个字段丢掉其余 19 �
 
 本机实测：workspace 无 `.git`、无 `.dsh/skills`，profile 未配 `bundledSkillDir`/`customSkillDirs`，
 `~/.dsh/skills` 为空 —— 也就是说**本插件的 3 个 `latex-*` 技能随包发布了很久，但一次都没被任何会话发现**。
-`node tools/install-skills.mjs --check` 对 11 个技能全部报 `MISSING`，这就是证据。
+当时用兜底脚本 `tools/install-skills.mjs --check` 对全部技能逐个报 `MISSING`，这就是证据。
+（该脚本与那批 vendored 技能在 0.2.0 一并删除，见下。）
 
 **第一次修法走了弯路**：我加了 `tools/install-skills.mjs`，把技能链接进 `~/.dsh/skills`（rank 400）。
 它能用（`--check` 全 `OK`），但**方向错了**：那是"文件发现"路线，需要外部安装步骤、
@@ -183,10 +184,9 @@ bundle patch 不再携带 `config`（消灭"覆盖一个字段丢掉其余 19 �
 | 与插件同生命周期 | 否 | **是** |
 | 组合里没有技能服务时 | 无影响 | **9 个工具照常可用**（`ctx.get` 可选依赖，不进 `inject`） |
 
-`tools/install-skills.mjs` 降级为**兜底**（插件不在运行时，例如只在编辑器/CI 里读技能），
-并在默认安装时提示"同时安装可能互相遮蔽"。
+**0.2.0 修订**：兜底脚本删除；同时**不再注册 vendored 的上游规范**——注册 11 个技能等于把 PaperFit 的 agent/命令/路径当成本插件的手册，而 `latex-*` 才是本插件自己的操作规程。现在注册的就是 3 个 `latex-*`，上游原文只作 `docs/upstream/paperfit/` 下的只读参考。
 
-实测（仓库开发副本）：`apply()` 注册 **9 工具 + 11 技能，0 problems**；
+实测（仓库开发副本）：`apply()` 注册 **9 工具 + 3 技能，0 problems**；
 无技能服务时仍注册 **9 工具**；技能服务抛异常时被隔离且**上报失败**而不是静默。
 
 ---

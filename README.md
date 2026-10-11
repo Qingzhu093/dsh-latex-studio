@@ -7,7 +7,7 @@
 > 🔧 **维护 / 交接从这里开始：[docs/HANDOFF.md](docs/HANDOFF.md)** —— 完整架构、工具面、配置契约、维护配方、已知问题。
 > 🧭 **设计依据与取舍：[docs/DESIGN-REVIEW.md](docs/DESIGN-REVIEW.md)** —— 为什么保留视觉通道、机检与页图如何分工。
 >
-> ⚠️ **装完插件还要装技能**（`npm run install-skills`），否则 `skills/` 里的规范文本对模型不可见，原因见 §2.2。
+> ℹ️ **技能由插件自己注册**，装完插件即可用，不需要额外步骤（见 §2.5）。`skills/` 里只有本插件自己的 3 个 `latex-*`；vendor 自 PaperFit 的上游规范自 0.2.0 起只作参考文本（`docs/upstream/paperfit/`），不再注册、不随包发布。
 
 ## 1. 它解决什么问题
 
@@ -59,8 +59,7 @@ profile → 发现根里有没有重复技能（会互相遮蔽）→ 本机 LaT
 [OK  ] patch      inserts the plugin row with no duplicated defaults
 [OK  ] tools      9 tools registered: latex_doctor, latex_build, latex_lint, bib_tool,
                   vto_start, vto_inspect, vto_fix, vto_verify, vto_report
-[OK  ] skills     11 skills registered: latex-daily, latex-fix-catalog, latex-vto-loop,
-                  paperfit-taxonomy-vto, …（共 8 个 paperfit-*）
+[OK  ] skills     3 skills registered: latex-daily, latex-fix-catalog, latex-vto-loop
 [OK  ] profile    registered in: desktop
 [OK  ] in-sync    this directory IS what profile "desktop" loads
 [OK  ] shadows    no discovery root duplicates the plugin-registered skills
@@ -98,8 +97,10 @@ node tools/doctor.mjs         # 升级后自检
 ### 2.5 技能：由插件自己注册（不需要额外步骤）
 
 **装了插件就有技能。** `lib/index.js` 在 `apply()` 里调用 `ctx.skills.register()` 把整包技能
-注册出去（11 个：本插件 3 个 `latex-*` + vendor 自 PaperFit 的 8 个 `paperfit-*`）。
+注册出去（**只有本插件自己的 3 个 `latex-*`**：`latex-daily`、`latex-vto-loop`、`latex-fix-catalog`）。
 注册是 effect，插件卸载时自动撤销；不需要安装脚本、不需要文件链接、不需要改 profile 配置。
+
+> 0.2.0 起**不再注册 vendored 的上游规范**：那些文本描述的是 PaperFit 的 agent/命令/路径（`data/pages/`、220 DPI、`/check-visual`），注册进来等于让模型拿别人的操作规程当本插件的手册。上游原文保留在 `docs/upstream/paperfit/`（含 MANIFEST 与逐文件哈希）作**只读参考**，`docs/` 也已移出发布白名单。
 
 ```js
 // lib/index.js（节选）
@@ -125,14 +126,8 @@ if (service?.register) registerSkillPack(service, loadSkillPack().skills)
 > `skills` 是**可选**依赖（`ctx.get` 而不是 `inject`）：组合里没有技能服务时，9 个工具照常可用，
 > 而不是让插件永远 PENDING——PENDING 的插件连一个工具都注册不了。
 
-**兜底路径**（仅当插件不在运行时会用到，例如只想在编辑器/CI 里读技能）：`tools/install-skills.mjs`
-可以把同一批技能链接进某个发现根目录。**正常使用不需要它**；同时安装会让同一个技能既被注册又被发现，
-可能互相遮蔽，所以默认不要装。
-
-```powershell
-node tools/install-skills.mjs --check      # 只报告
-node tools/install-skills.mjs --uninstall  # 撤掉兜底安装
-```
+**不用插件时怎么读技能**：直接打开 `skills/<名字>/SKILL.md` 即可（例如在编辑器或 CI 里）。
+0.2.0 删除了 `tools/install-skills.mjs`：它是为「技能不进上下文」那个已经修好的问题写的兜底，而把同一批技能同时注册又放进发现根，只会互相遮蔽。
 
 ## 3. 两套命令体系
 
@@ -291,11 +286,12 @@ dsh-latex-studio/
 │   ├── tools/              # 唯一允许 import @deepseek-ai/dsh-tools 的地方
 │   │   ├── daily.js        # latex_doctor / latex_build / latex_lint / bib_tool
 │   │   └── vto.js          # vto_start / vto_inspect / vto_fix / vto_verify / vto_report
-│   └── data/               # PaperFit 配置（MIT）转换后的 JSON + 报告模板
+│   └── data/               # 在用的 PaperFit 数据（MIT）：分类法 / 阈值 / 报告模板
 ├── skills/                 # 操作守则（latex-daily / latex-vto-loop / latex-fix-catalog）
 ├── test/                   # node:test 单测；run-all.mjs 聚合汇总
-├── docs/                   # HANDOFF(交接) / INTERFACES / ACCEPTANCE / paperfit-notes / P0-PROBES
-├── tools/                  # 辅助脚本（yaml→json 转换、P0 探针）
+├── docs/                   # 【不随包发布】HANDOFF / INTERFACES / ACCEPTANCE / paperfit-notes / P0-PROBES
+│   └── upstream/paperfit/  # 【只读参考】上游 agent/命令原文 + MANIFEST（逐文件 sha256）
+├── tools/                  # 辅助脚本（doctor / install / 页图体检 / 上游参考校验）
 ├── cordis.patch.yml        # bundle 配置层（开关默认值）
 └── THIRD_PARTY_NOTICES.md
 ```

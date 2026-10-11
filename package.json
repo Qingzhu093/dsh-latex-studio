@@ -12,10 +12,8 @@
   "files": [
     "lib",
     "skills",
-    "docs",
     "test",
     "tools/verify-pdf-read.mjs",
-    "tools/install-skills.mjs",
     "tools/vendor-paperfit-specs.mjs",
     "tools/doctor.mjs",
     "tools/install.mjs",
@@ -65,7 +63,6 @@
     "test": "node test/run-all.mjs",
     "doctor": "node tools/doctor.mjs",
     "install-plugin": "node tools/install.mjs",
-    "install-skills": "node tools/install-skills.mjs",
     "vendor-specs": "node tools/vendor-paperfit-specs.mjs"
   }
 }

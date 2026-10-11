@@ -1,6 +1,5 @@
 /**
- * Guard for the operational entry points: `tools/doctor.mjs`, `tools/install.mjs`
- * and `tools/install-skills.mjs`.
+ * Guard for the operational entry points: `tools/doctor.mjs` and `tools/install.mjs`.
  *
  * These exist to make "is it working / how do I install it" answerable without
  * reading this package's internals. They are therefore part of the contract, and
@@ -60,7 +59,7 @@ test('doctor: --json emits a machine-readable report with the same verdict', { t
   assert.match(tools.detail, /9 tools registered/)
   const skills = report.results.find((r) => r.name === 'skills')
   assert.equal(skills.status, 'ok')
-  assert.match(skills.detail, /11 skills registered/)
+  assert.match(skills.detail, /3 skills registered/)
 })
 
 test('doctor: a broken patch is caught rather than reported healthy', { timeout: 180000 }, () => {
@@ -110,20 +109,12 @@ test('packaging: the operational tools are in the files whitelist', () => {
   }
 })
 
-test('install-skills: --check reports per-skill state without writing', { timeout: 120000 }, () => {
-  const result = runTool('tools/install-skills.mjs', ['--check'])
-  // Exit 1 simply means "not installed in that root", which is the expected state
-  // now that the plugin registers its skills itself.
-  assert.ok([0, 1].includes(result.status), result.stdout + result.stderr)
-  assert.match(result.stdout, /root   :/)
-  assert.match(result.stdout, /skills : 11/)
-  for (const name of ['latex-daily', 'latex-vto-loop', 'paperfit-taxonomy-vto']) {
-    assert.match(result.stdout, new RegExp('(OK|MISSING)\\s+' + name))
-  }
-})
-
-test('install-skills: --uninstall is a safe no-op when nothing is installed', { timeout: 120000 }, () => {
-  const result = runTool('tools/install-skills.mjs', ['--uninstall', '--root', path.join(os.tmpdir(), 'dsh-empty-root-' + Date.now())])
-  assert.equal(result.status, 0, result.stdout + result.stderr)
-  assert.match(result.stdout, /removed: 0/)
+test('packaging: docs/ and the removed install-skills tool do not ship', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(PKG, 'package.json'), 'utf8'))
+  // 0.2.0: the vendored upstream reference is repo-only; skills are registered by
+  // the plugin, so the filesystem fallback installer is gone.
+  assert.ok(!pkg.files.includes('docs'), 'docs/ must not ship')
+  assert.ok(!pkg.files.includes('tools/install-skills.mjs'), 'install-skills.mjs must not ship')
+  assert.ok(!fs.existsSync(path.join(PKG, 'tools', 'install-skills.mjs')), 'tools/install-skills.mjs must be deleted')
+  assert.ok(!('install-skills' in (pkg.scripts ?? {})), 'the install-skills script must be removed')
 })

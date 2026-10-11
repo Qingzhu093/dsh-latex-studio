@@ -22,18 +22,19 @@ detection for single-column layouts (A5 is defined for two-column layouts only).
 
 Methodology reference: PaperFit, arXiv:2605.10341, UCAS / Shanghai AI Laboratory / SJTU.
 
-**Vendored specification text** (added 2026-10-11): the agent and skill specification prose from
-`paperfit-cli@1.0.6` is vendored as data assets, because these files are the paper-level reference
-for VTO repair and were previously paraphrased from memory in this package:
+**Vendored specification text — reference only (posture changed in 0.2.0)**: the agent and command
+specification prose from `paperfit-cli@1.0.6` is vendored under `docs/upstream/paperfit/` so a reader
+can consult the original wording:
 
 - `docs/upstream/paperfit/agents/*.md` — 6 agent specifications (orchestrator, rule-engine,
   layout-detective, code-surgeon, semantic-polish, quality-gatekeeper), byte-identical to upstream.
-- `skills/paperfit-*/SKILL.md` — 8 fixer/inspection skills. The ONLY modification is a prepended
-  YAML frontmatter block (`name` + `description`, mechanically derived from the upstream title and
-  opening paragraph) that the DSH skill provider requires; upstream ships no frontmatter, so no
-  upstream content is replaced. Directories are prefixed `paperfit-` so they can never collide with
-  this package's own `latex-*` skills in a shared discovery root.
 - `docs/upstream/paperfit/CLAUDE.md`, `commands/*.md`, `LICENSE` — byte-identical to upstream.
+
+Until 0.2.0 the upstream skill texts were also shipped as eight `paperfit-*` DSH skills. That is no
+longer the case: registering them made the model read a foreign workflow (its own agent roles,
+`data/pages/`, 220 DPI, `/check-visual`) as this plugin's operating manual, and freezing them
+byte-identical ruled out the adaptations this package needs. Operational knowledge now lives in this
+package's own `skills/latex-*`, which we own; `docs/` is not part of the published file set.
 
 Provenance, per-file source hashes and the upstream version are recorded in
 `docs/upstream/paperfit/MANIFEST.json`, written by `tools/vendor-paperfit-specs.mjs`
