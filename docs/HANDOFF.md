@@ -107,15 +107,16 @@ dsh-latex-studio/
 │   ├── config.js               DEFAULTS + normalizeConfig()
 │   ├── core/                   ← 零 DSH 依赖
 │   │   ├── paths.js            路径守卫的**唯一实现**（工作区相对 + 容器性判定）
+│   │   ├── rules.js            FORBIDDEN 规则表 + extractProtected（policy/guard/lint 共用）
 │   │   ├── voidetect.js        页图机检：A5 列空洞 + 页级度量（PaperFit detect_column_void 移植）
 │   │   ├── env.js              工具链探测（含 MiKTeX 目录回退）
-│   │   ├── compile.js          多趟编译驱动（不用 latexmk）
+│   │   ├── compile.js          编译驱动：latexmk（可用时优先）/ 内置多趟 + makeindex
 │   │   ├── lint.js             静态规则 + chktex 三态
 │   │   ├── bib.js              BibTeX 解析/lint/format/fill/audit
 │   │   ├── render.js           页图渲染（poppler → mgs → mineru）
 │   │   ├── guard.js            内容保全基线（sha256 快照/比对）
-│   │   ├── policy.js           禁用修复手法检测（FORBIDDEN）
-│   │   ├── state.js            .latex-studio 状态、备份、回滚
+│   │   ├── policy.js           禁用修复手法的差分门禁（规则表在 rules.js）
+│   │   ├── state.js            .latex-studio 状态 v2（含缺陷台账）、备份、回滚
 │   │   ├── report.js           轮次报告渲染
 │   │   ├── logparse.js         引擎日志解析（错误行号/overfull、.aux 指纹）
 │   │   └── pdfread.js          隐私门 + read_pdf 桥接
@@ -612,7 +613,7 @@ console.log('sync:', !(res&&res.then), '| registered:', JSON.stringify(res.regis
 | 7 | 安装 | 桌面 profile 的 CLI `add` 会挂起 | 用应用内插件管理器或第 11.2(b) 节的手工路径 |
 | 8 | 脚手架 | `tools/_p0/` 是调研证据，**有意不在发布白名单** | 若要做发布审计，需单独归档 |
 | 9 | 耦合 | `skills/latex-fix-catalog/SKILL.md` 与 `vto_taxonomy.json` 存在语义耦合 | 改一处要同步另一处 |
-| 10 | 文档 | `docs/INTERFACES.md` 是"冻结契约"但**已滞后于代码**（重复小节号、缺 `paths.js`、`checkPolicy` 三参等） | `test/docs.test.mjs` 现在只钉住字段数/布局名/模块地图；建议进一步从工具注册反向生成 INTERFACES |
+| 10 | 文档 | ✅ **0.2.0 部分处理**：`INTERFACES.md` §11 增加参数基准表；重复小节号与陈旧描述仍在 | `test/docs.test.mjs` 钉住字段数/布局名/模块地图；建议进一步从工具注册反向生成 |
 | 11 | 配置 | 已删 `maxRounds`/`enableFixerSidecar`/`enableSemanticTuning`（无人读取） | 老 profile 里若还写着这些键，schemastery **会静默忽略**（无 strict 模式），不会报错——属可接受 |
 | 12 | 数据 | `lib/data/` 里 5 个 JSON（templates/content_boundaries/writing_rules/agent_roles/layout_rules）**无任何代码读取**，且生成它们的 PaperFit YAML 已不在仓库 | 要么接上用途，要么移出发布集；见第 17 节 |
 | 13 | 路径 | 路径守卫是词法的（`resolve` + 前缀比较），**看不到 junction/符号链接** | `vto_fix` 理论上可穿过指向工程外的 junction 写入；未做利用验证。修法是加 `realpath` 复检 |
@@ -790,7 +791,7 @@ console.log('sync:', !(res&&res.then), '| registered:', JSON.stringify(res.regis
 
 | # | 事项 | 证据 / 理由 |
 |---|---|---|
-| B1 | **缺陷台账（最有价值的一项）** | 论文的核心增益是"**持久化缺陷记录 + 验收门控**"：VisualMR 与 PaperFit **都看图**，Program 分几乎相同（4.5789 vs 4.5790），差距全在结构化组织上；VisualMR 正是在"第一个可渲染结果"处停下。把每轮 `defects[]`（`d=(c,o,r,e)` + `evidence_sources` + `cv_signal_ref`）写进 `state.json` 供下一轮对比与门禁 |
+| B1 | ✅ **0.2.0 已实施**（见 §17.3）：`state.json.ledger` + `vto_report({defects})` + `vto_verify` 回归检查 + 报告台账表 | 原记录：**缺陷台账（最有价值的一项）** | 论文的核心增益是"**持久化缺陷记录 + 验收门控**"：VisualMR 与 PaperFit **都看图**，Program 分几乎相同（4.5789 vs 4.5790），差距全在结构化组织上；VisualMR 正是在"第一个可渲染结果"处停下。把每轮 `defects[]`（`d=(c,o,r,e)` + `evidence_sources` + `cv_signal_ref`）写进 `state.json` 供下一轮对比与门禁 |
 | B2 | **Vendor PaperFit 的 agent 规范文本** | `paperfit-cli` 的 9 个 SKILL.md + 6 个 agent .md 是论文级规范（`taxonomy-vto` 18.5KB、`space-util-fixer` 11KB、`float-optimizer` 11.2KB…合计 >100KB），而本插件只有 420 行的 `latex-fix-catalog`。这是最大的"重复造轮子/知识损耗"点。**需先确认许可与发布白名单**（MIT，须更新 `THIRD_PARTY_NOTICES.md`） |
 | B3 | **B2 缺陷的机检**：从页图测图表渲染宽度与栏宽之比 | `layout-detective-agent.md:187-192` 明确要求（`table.min/max_width_utilization`）；本插件目前没有这门测量。B1-B（placement 导致的尺寸压缩）同理 |
 | B4 | **A2/A4 的机检** | `trailingBlankRatio` 已在 `machineSignals` 里，可直接判 A2；A4 栏高差需比较两栏栏底墨迹位置。阈值已在 checklist，缺的是"谁去量" |

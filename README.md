@@ -18,6 +18,8 @@
 - **页图后端全部本地、零额外安装**：MiKTeX 自带 Poppler（`pdftoppm`）与 Ghostscript（`mgs.exe`）；MinerU 只作可选兜底。
 - **外部件缺失绝不抛异常**：一律降级为 `status:'skipped'` + `advice`（可执行的修复命令）。
 - **写操作原子化**：先备份 → 再写 → 用内容守卫校验 → 失败回滚；`vto_fix` 默认 `apply:false` 只给配方与 diff。
+- **缺陷台账跨轮持久**：`vto_report({defects:[…]})` 按 `id+page` 落进 `state.json`，`vto_verify` 对「标了 fixed 又复发」判回归、对未清的阻断级缺陷降级 verdict——这是 PaperFit 相对朴素多轮视觉的全部增益来源（显式缺陷记录 + 受限修复 + 门禁）。
+- **编译驱动**：默认优先 `latexmk`（带 `.fls` 依赖追踪；需要 Perl，Git 自带亦可），不可用时自动回落内置多趟驱动，两者产出同一结果结构（`via` 标明走了哪条）。
 - **隐私内置**：`uploadScope` 闸门统一决定「哪种 PDF 解析可以上传」，默认不外发本人稿件。
 
 ## 2. 安装与自检
@@ -157,7 +159,8 @@ if (service?.register) registerSkillPack(service, loadSkillPack().skills)
 
 模型：vto_start({dir:"paper", pageBudget:9})     ← 冻结内容基线 + 记录当前页数
       vto_inspect({dir:"paper", pages:"all"})    ← 出页图 + 机检候选 + 带阈值的 checklist
-      …逐页看图，按 checklist 的 id 记录缺陷…
+      …逐页看图，按 checklist 的 id 记录缺陷（每项带 visual_indicators 与数值阈值）…
+      vto_report({dir:"paper", defects:[{id:"A5", page:3, severity:"major", evidence:"左栏空洞 34%"}]})  ← 写入台账
       vto_fix({dir:"paper", file:"main.tex", find:"…", replace:"…"})        ← apply 默认 false：只看 diff
       vto_fix({…, apply:true})                   ← 备份 → 写 → guard 校验 → 失败自动回滚
       vto_verify({dir:"paper"})                  ← 五项门禁 + verdict + regressions + rollbackTo
@@ -184,10 +187,10 @@ if (service?.register) registerSkillPack(service, loadSkillPack().skills)
 | 工具 | 用途 | 关键参数 |
 |---|---|---|
 | `vto_start` | 建立基线：`<workDir>/state.json` + 内容快照（cite/label/ref/caption + 每文件 sha256）+ 页数基线 | `dir` `entry` `pageBudget` `template` `columnType` `workDir` |
-| `vto_inspect` | **视觉检测**：按 `rendererOrder` 渲染页图（image 内容块回会话）+ 带 `layoutRules` 数值阈值的 18 项 checklist + `machineSignals` 机检候选 | `dir` `pdf` `pages` `dpi` `focus` `parse` `consent` |
+| `vto_inspect` | **视觉检测**：按 `rendererOrder` 渲染页图（image 内容块回会话）+ 带数值阈值/视觉特征/日志信号的 18 项 checklist + `machineSignals` 机检候选 + 当前缺陷台账；`parse:true` 走真实结构化解析（受 `uploadScope` 闸门） | `dir` `pdf` `pages` `dpi` `focus` `parse` `consent` |
 | `vto_fix` | 受限修复：默认 `apply:false` 只给 diff/配方；`apply:true` 走 备份→写→policy+guard 校验→失败回滚 | `dir` `file` `find` `replace` `replaceAll` / `edits` `apply` `round` `rationale` `force` `allowPolicy` |
-| `vto_verify` | 门禁复核：重新编译 + 重新渲染抽样页 + 内容保全 + 页数预算 + 策略检查，给出 `verdict`/`checks`/`regressions`/`rollbackTo` | `dir` `entry` `pdf` `pages` `pageBudget` `round` `dpi` |
-| `vto_report` | 写出本轮诊断报告（`.json` + `.md`，模板 vendored 自 PaperFit） | `dir` `round` `verdict` `changes` `remaining` `defectsBefore` `defectsAfter` `notes` |
+| `vto_verify` | 门禁复核：重新编译 + 重新渲染抽样页 + 内容保全 + 页数预算 + 策略 + 关键章节下限 + **台账回归**，给出 `verdict`/`checks`/`regressions`/`rollbackTo` | `dir` `entry` `pdf` `pages` `pageBudget` `round` `dpi` |
+| `vto_report` | 写出本轮诊断报告并把缺陷写进台账（`.json` + `.md`；编译状态与内容哈希取自真实记录） | `dir` `round` `verdict` `changes` `remaining` **`defects`** `defectsBefore` `defectsAfter` `notes` |
 
 > **路径基准（0.2.0 起）**：`dir`、`bib`、`tex`、`latex_doctor.pdfPath` 按**会话工作区**解析；`entry`、`file`、`pdf` 按 **`dir` 指向的工程目录**解析（例如 `dir:"paper"` + `entry:"main.tex"`）；`workDir` 是纯目录名。绝对路径、盘符、UNC 与 `..` 一律拒绝。
 > 传错基准时工具会直接告诉你应传什么，而不是丢一个 `FILE_NOT_READABLE`（见 `test/params.test.mjs`）。

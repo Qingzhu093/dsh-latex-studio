@@ -134,7 +134,20 @@ export function registerDaily(ctx, config)   // latex_doctor, latex_build, latex
 export function registerVto(ctx, config)     // vto_start, vto_inspect, vto_fix, vto_verify, vto_report
 ```
 用 `defineTool` from `@deepseek-ai/dsh-tools`；`output.schema` 为 JSON Schema 片段；`output.render(args,value)` 返回 `ContentBlock[]`（文本或 `{type:'image',...}`）。
-工具入参按 **基准** 解析：`dir`/`bib`/`tex`/`pdfPath` 工作区相对；`entry`/`file`/`pdf` 相对 `dir`；`workDir` 是纯目录名。绝对路径、盘符、UNC 与 `..` 一律拒绝（`test/params.test.mjs` 强制）。
+工具入参按 **基准** 解析（0.2.0 冻结，`test/params.test.mjs` 强制）：
+
+| 类别 | 参数 | 基准 | 规则 |
+|---|---|---|---|
+| 工程根 | `dir` | 会话工作区 | 工作区相对；省略 = 工作区根 |
+| 工程内文件 | `entry` `file` `pdf` | `dir` 指向的工程目录 | 工程相对；缺失时给「应传什么」的 advice |
+| 工作区文件 | `latex_doctor.pdfPath` `bib_tool.bib` `bib_tool.tex` | 会话工作区 | 工作区相对 |
+| 工作目录名 | `workDir` | `config.workDir` | 纯目录名，非法回退默认 |
+| 页码 | `pages` | — | `all` 或 `3`/`1-3,5`，1-based |
+| 轮次 | `round` | `state.round` | 正整数 |
+| 副作用开关 | `apply` `write` `replaceAll` `force` `clean` `parse` `consent` `verifyPdfRead` | `false` | 必须显式 true 才产生写/上传 |
+| 枚举 | `engine` `action` `columnType` | `auto`/必填 | 非法值报错，不静默回退 |
+
+绝对路径、盘符、UNC 与 `..` 一律拒绝。词法守卫只有 `lib/core/paths.js` 一份实现；工程相对语义由 `lib/tools/vto.js` 的 `resolveProjectPath` 收口；规则表由 `lib/core/rules.js` 收口。
 
 **工作区根**（daily/vto 一致）：`exec.agent.session.header.cwd` → `ctx.get('fs').cwd` → `process.cwd()`（前两者优先；DSH 桌面端进程 cwd 未必是会话工作区）。
 

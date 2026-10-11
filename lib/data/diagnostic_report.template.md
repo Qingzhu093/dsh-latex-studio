@@ -1,29 +1,24 @@
-# PaperFit 排版诊断报告 — 第 {{ROUND}} 轮
+# LaTeX 排版诊断报告 — 第 {{ROUND}} 轮
 
 **时间**：{{TIMESTAMP}}
-**状态**：{{STATUS_LINE}}
+**结论**：{{STATUS_LINE}}
 
-## 编译摘要
+> 本报告由 dsh-latex-studio 的 `vto_report` 生成：所有数字来自 `<workDir>/state.json` 的缺陷台账与本轮门禁记录，缺值时写 `—`，不臆造。
 
-- 编译状态：{{COMPILE_STATUS}}
-- 日志错误数：{{LOG_ERROR_COUNT}}
-- 日志警告数：{{LOG_WARN_COUNT}}
+## 1. 编译
 
-## OpenCV 列空洞（A5 机检摘要）
+- 状态：{{COMPILE_STATUS}}
+- 日志错误：{{LOG_ERROR_COUNT}} 条 / 警告：{{LOG_WARN_COUNT}} 条
 
-> 本段由 `orchestrator` 在**页图渲染成功后**对双栏任务自动运行 `detect_column_void` 后，根据 `data/state.json` 的 `artifacts` / `cv_signals_summary` 填写。
+## 2. 缺陷台账
 
-- 机检报告路径：`{{COLUMN_VOID_REPORT}}`
-- A5 候选条数：**{{CV_A5_COUNT}}**
-- 涉及页码：**{{CV_A5_PAGES}}**
+| 缺陷 | 页码 | 严重度 | 阻断门禁 | 状态 | 证据 | 修复轮次 |
+|------|------|--------|----------|------|------|----------|
+{{LEDGER_TABLE}}
 
-### 按页摘要（来自 `cv_signals_summary.by_page`）
+> 台账是跨轮持久的：`status=fixed` 的条目若在本轮重新变回 `open`，`vto_verify` 会记一条 `ledgerRegression`。
 
-{{CV_BY_PAGE_MARKDOWN}}
-
-*说明：上表为行向墨迹投影结果，须与逐页 VLM 核对后再写入正式 `defects`；若未运行机检（单栏任务），填「本栏不适用」。*
-
-## 缺陷消除进度
+## 3. 缺陷消除进度
 
 | 缺陷类别 | 初始数量 | 剩余数量 | 消除率 |
 |----------|----------|----------|--------|
@@ -34,29 +29,22 @@
 | E 跨模板 | {{E_INIT}} | {{E_REM}} | {{E_PCT}} |
 | **合计** | **{{T_INIT}}** | **{{T_REM}}** | **{{T_PCT}}** |
 
-## 本轮修改摘要
+## 4. 本轮修改
 
 {{CHANGES_SUMMARY}}
 
-## 剩余缺陷（若状态为 CONTINUE）
+## 5. 剩余缺陷
 
 {{REMAINING_DEFECTS_TABLE}}
 
-## 内容完整性验证
+## 6. 内容完整性
 
-> 本节由 `quality-gatekeeper` 根据 `code-surgeon-agent` 提供的 `pre_repair_snapshot.json` 和 `post_repair_validation.json` 填写。若本轮不涉及修复，填「本栏不适用」。
-
-- 修复前学术内容哈希：`{{PRE_HASH}}`
-- 修复后学术内容哈希：`{{POST_HASH}}`（{{HASH_STATUS}}）
-- 学术词汇数量变化：{{WORD_COUNT_BEFORE}} → {{WORD_COUNT_AFTER}}（{{WORD_COUNT_CHANGE}}%）
-- 关键章节检查：
-  - Abstract：{{ABSTRACT_STATUS}}
-  - Conclusions：{{CONCLUSIONS_STATUS}}
-- 内容变更详情：{{CONTENT_CHANGE_DETAILS}}
+- 受保护内容哈希：`{{PRE_HASH}}` → `{{POST_HASH}}`（{{HASH_STATUS}}）
+- 学术词数变化：{{WORD_COUNT_BEFORE}} → {{WORD_COUNT_AFTER}}（{{WORD_COUNT_CHANGE}}）
 
 {{CONTENT_INTEGRITY_ALERT}}
 
-## 质量门禁判定依据
+## 7. 门禁判定依据
 
 {{GATE_CHECKLIST}}
 

@@ -273,6 +273,9 @@ function checkToolchain(pkgDir) {
       pdfinfo: report?.poppler?.pdfinfo ?? null,
       mgs: report?.ghostscript?.mgs ?? null,
       mgsVersion: report?.ghostscript?.version ?? null,
+      latexmkUsable: report?.latexmk?.usable === true,
+      latexmkVersion: report?.latexmk?.version ?? null,
+      perl: report?.perl?.path ?? null,
     }))
   `
   const run = spawnSync(process.execPath, ['--input-type=module', '-e', script], { encoding: 'utf8', cwd: pkgDir, timeout: 120000 })
@@ -287,6 +290,15 @@ function checkToolchain(pkgDir) {
   }
   if (!info.latex) {
     results.push(bad('toolchain', 'no TeX engine found (install MiKTeX: winget install MiKTeX.MiKTeX)'))
+  // Driver: latexmk is preferred when it can run (it needs Perl, which MiKTeX does
+  // not ship); the built-in multi-pass driver is the fallback either way.
+  if (info.latexmkUsable) {
+    results.push(ok('driver', 'latexmk=' + String(info.latexmkVersion || '').slice(0, 48) + (info.perl ? ' (perl=' + info.perl + ')' : '') + ' -> preferred driver'))
+  } else if (info.perl) {
+    results.push(warn('driver', 'perl found (' + info.perl + ') but latexmk is not usable; built-in multi-pass driver in use'))
+  } else {
+    results.push(skip('driver', 'no usable perl/latexmk; built-in multi-pass driver in use (install: winget install StrawberryPerl.StrawberryPerl)'))
+  }
   } else {
     results.push(ok('toolchain', 'engine=' + info.latex + (info.version ? ' (' + info.version + ')' : '') + ' isMiKTeX=' + info.isMiKTeX))
   }
