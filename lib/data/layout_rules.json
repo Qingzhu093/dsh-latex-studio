@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "whitespace": {
+    "trailing_whitespace_max_ratio": 0.2,
+    "float_page_whitespace_warning": 0.4,
+    "column_balance_max_diff_lines": 2
+  },
+  "intra_column_void": {
+    "min_void_ratio_of_column": 0.3,
+    "min_void_height_lines": 8
+  },
+  "table": {
+    "min_width_utilization": 0.85,
+    "max_width_utilization": 1,
+    "allowed_font_sizes": [
+      "small",
+      "footnotesize"
+    ],
+    "forbid_resizebox": true
+  },
+  "float": {
+    "max_reference_distance_pages": 1,
+    "max_consecutive_floats": 2,
+    "min_text_between_floats_lines": 3
+  },
+  "equation": {
+    "max_width_ratio": 0.95,
+    "overflow_severity_threshold_pt": 5
+  },
+  "paragraph": {
+    "widow_orphan_detection": true,
+    "short_last_line_max_ratio": 0.25,
+    "looseness_max_attempts": 2,
+    "global_penalty_enabled": true
+  },
+  "font": {
+    "enforce_consistency": true,
+    "forbidden_commands": [
+      "\\tiny",
+      "\\scriptsize"
+    ]
+  },
+  "semantic": {
+    "min_words_to_modify": 3,
+    "max_words_to_modify": 15,
+    "allowed_sections": [
+      "Conclusion",
+      "Discussion",
+      "Results",
+      "Analysis"
+    ],
+    "expand_phrases_enabled": true,
+    "shorten_fillers_enabled": true,
+    "passive_to_active_enabled": true
+  },
+  "consistency": {
+    "caption_style_enforce": true,
+    "table_font_size_enforce": true
+  }
+}

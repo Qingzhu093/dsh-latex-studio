@@ -1,0 +1,91 @@
+{
+  "version": "1.0",
+  "forbidden": {
+    "contractions": [
+      "don't",
+      "isn't",
+      "can't",
+      "won't",
+      "it's",
+      "that's",
+      "we're",
+      "they're"
+    ],
+    "filler_phrases": [
+      "It is worth noting that",
+      "It should be emphasized that",
+      "It is interesting to note that",
+      "Needless to say",
+      "As a matter of fact"
+    ]
+  },
+  "tense": {
+    "introduction": "present",
+    "related_work": "present",
+    "method": "past",
+    "experiments": "past",
+    "results": "present",
+    "conclusion": "present"
+  },
+  "terminology": {
+    "preferred": [
+      {
+        "preferred": "state-of-the-art",
+        "avoid": [
+          "SOTA",
+          "cutting-edge",
+          "leading"
+        ]
+      },
+      {
+        "preferred": "method",
+        "avoid": [
+          "approach",
+          "framework",
+          "technique"
+        ]
+      },
+      {
+        "preferred": "dataset",
+        "avoid": [
+          "corpus",
+          "data set"
+        ]
+      }
+    ],
+    "abbreviations": {
+      "require_first_definition": true,
+      "allowed_without_definition": [
+        "NLP",
+        "CV",
+        "ML",
+        "AI"
+      ]
+    }
+  },
+  "citations": {
+    "style": "numerical",
+    "forbid_manual_brackets": true
+  },
+  "math": {
+    "vector_notation": "\\\\mathbf",
+    "scalar_notation": "italic",
+    "function_names": "\\\\mathrm"
+  },
+  "semantic_polish": {
+    "max_word_change_per_edit": 15,
+    "forbidden_edit_sections": [
+      "abstract",
+      "acknowledgments"
+    ],
+    "preferred_expand_sections": [
+      "discussion",
+      "conclusion",
+      "related_work"
+    ],
+    "preferred_shorten_sections": [
+      "introduction",
+      "related_work"
+    ]
+  }
+}

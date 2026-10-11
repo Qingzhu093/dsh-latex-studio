@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "upstream": {
+    "name": "paperfit-cli",
+    "version": "1.0.6",
+    "license": "MIT",
+    "repository": "https://github.com/OpenRaiser/PaperFit",
+    "paper": "arXiv:2605.10341",
+    "note": "Vendored as specification text. Algorithm ports are noted separately in THIRD_PARTY_NOTICES.md."
+  },
+  "generatedBy": "tools/vendor-paperfit-specs.mjs",
+  "generatedAt": "2026-10-11T02:52:59.209Z",
+  "files": [
+    {
+      "dest": "docs/upstream/paperfit/agents/orchestrator-agent.md",
+      "source": "agents/orchestrator-agent.md",
+      "sourceSha": "1bb39403f733a5294deab7b3aaeb01b4509f40ecaa1c2072c2282515d6d36f60",
+      "transform": "none",
+      "bytes": 12689
+    },
+    {
+      "dest": "docs/upstream/paperfit/agents/rule-engine-agent.md",
+      "source": "agents/rule-engine-agent.md",
+      "sourceSha": "9afc0ffe2554631fd16cbd638025ae4dbb88dbf78d2f09a2b0b2e3ca1d16bfd7",
+      "transform": "none",
+      "bytes": 8542
+    },
+    {
+      "dest": "docs/upstream/paperfit/agents/layout-detective-agent.md",
+      "source": "agents/layout-detective-agent.md",
+      "sourceSha": "7b7e98e94ba7012188b56866ef93383cc8428d92c3c0cb58153a70422eb33855",
+      "transform": "none",
+      "bytes": 14619
+    },
+    {
+      "dest": "docs/upstream/paperfit/agents/code-surgeon-agent.md",
+      "source": "agents/code-surgeon-agent.md",
+      "sourceSha": "b2f46cbd40b272eef926109eb690d85bf2e6eee94693aae28fbc5cc0d8d388c9",
+      "transform": "none",
+      "bytes": 11686
+    },
+    {
+      "dest": "docs/upstream/paperfit/agents/semantic-polish-agent.md",
+      "source": "agents/semantic-polish-agent.md",
+      "sourceSha": "8bb20ebb0689ec5662affe8e01451b8946cbdcdb3bf0a176ab78957aaf6e13b0",
+      "transform": "none",
+      "bytes": 10740
+    },
+    {
+      "dest": "docs/upstream/paperfit/agents/quality-gatekeeper-agent.md",
+      "source": "agents/quality-gatekeeper-agent.md",
+      "sourceSha": "b7489ffc05ff85717ac0a39f5049501bbd4409148e52ff014f9989ec88ea3af8",
+      "transform": "none",
+      "bytes": 13179
+    },
+    {
+      "dest": "skills/paperfit-taxonomy-vto/SKILL.md",
+      "source": "skills/taxonomy-vto/SKILL.md",
+      "sourceSha": "549138e8121ce619b414e558ca176299a814bce44c5e7d93358e68ec928c165a",
+      "transform": "frontmatter",
+      "bytes": 18997
+    },
+    {
+      "dest": "skills/paperfit-space-util-fixer/SKILL.md",
+      "source": "skills/space-util-fixer/SKILL.md",
+      "sourceSha": "842866c1f0d019e3c422c9d867a1211b6dfd1059268c8c9a886dc112231f6a1f",
+      "transform": "frontmatter",
+      "bytes": 11263
+    },
+    {
+      "dest": "skills/paperfit-float-optimizer/SKILL.md",
+      "source": "skills/float-optimizer/SKILL.md",
+      "sourceSha": "ebcdbe947306bf0a786e9304112543323de961a475240f9abf324ad0e5e5a697",
+      "transform": "frontmatter",
+      "bytes": 11376
+    },
+    {
+      "dest": "skills/paperfit-consistency-polisher/SKILL.md",
+      "source": "skills/consistency-polisher/SKILL.md",
+      "sourceSha": "8d9eefa491c1e2d0be69973f715bc2bb9af203bf98a305b37fa7e7befdec1a6d",
+      "transform": "frontmatter",
+      "bytes": 10836
+    },
+    {
+      "dest": "skills/paperfit-overflow-repair/SKILL.md",
+      "source": "skills/overflow-repair/SKILL.md",
+      "sourceSha": "6debe42611c8bf2f9359c39100afc200d8ec64755acdcdeaa2283a5b4ef98f0f",
+      "transform": "frontmatter",
+      "bytes": 9024
+    },
+    {
+      "dest": "skills/paperfit-template-migrator/SKILL.md",
+      "source": "skills/template-migrator/SKILL.md",
+      "sourceSha": "21bfe2dbf218ddf0545aade50d10eb63b7390ed5cc4b771394fb81bc5687239e",
+      "transform": "frontmatter",
+      "bytes": 9349
+    },
+    {
+      "dest": "skills/paperfit-visual-inspector/SKILL.md",
+      "source": "skills/visual-inspector/SKILL.md",
+      "sourceSha": "5466d344ac3dcfbb33a24b411fb04d41a41555cf4a26467e432cdd0475f268fa",
+      "transform": "frontmatter",
+      "bytes": 8965
+    },
+    {
+      "dest": "skills/paperfit-writing-polish/SKILL.md",
+      "source": "skills/writing-polish/SKILL.md",
+      "sourceSha": "c33e3623263dd1e5b1b837a17aa7edca1dd2dcbbbd539bb411f678ff85a02d1c",
+      "transform": "frontmatter",
+      "bytes": 11215
+    },
+    {
+      "dest": "docs/upstream/paperfit/CLAUDE.md",
+      "source": "CLAUDE.md",
+      "sourceSha": "82f471373b2cbaa86a8a047ca30739155181ebc938a17402cd2abdc58219dc54",
+      "transform": "none",
+      "bytes": 17790
+    },
+    {
+      "dest": "docs/upstream/paperfit/commands/fix-layout.md",
+      "source": ".claude/commands/fix-layout.md",
+      "sourceSha": "ca905e8f73fd22bb2d672719c068e556074bcc68447feaf07eb955d8db134abb",
+      "transform": "none",
+      "bytes": 1869
+    },
+    {
+      "dest": "docs/upstream/paperfit/commands/check-visual.md",
+      "source": ".claude/commands/check-visual.md",
+      "sourceSha": "c89758c91ecb9ae915fab747f6282d31b7ce16161c6280109f092f5266d89eae",
+      "transform": "none",
+      "bytes": 1036
+    },
+    {
+      "dest": "docs/upstream/paperfit/commands/repair-table.md",
+      "source": ".claude/commands/repair-table.md",
+      "sourceSha": "310641254718b3c086db0fd77dfb27e04e16edeba04edd1fd4b0462f314b41cf",
+      "transform": "none",
+      "bytes": 517
+    },
+    {
+      "dest": "docs/upstream/paperfit/commands/adjust-length.md",
+      "source": ".claude/commands/adjust-length.md",
+      "sourceSha": "bd66e315f5b62a87f44b8a2eaf5c73c5efa6a0e510f5b25ed5ebc51a038d8d83",
+      "transform": "none",
+      "bytes": 682
+    },
+    {
+      "dest": "docs/upstream/paperfit/commands/migrate-template.md",
+      "source": ".claude/commands/migrate-template.md",
+      "sourceSha": "235adb5ed539fc1e7053a2e9534b9b0e5b39cde63c32b61546abfdd2d7893a14",
+      "transform": "none",
+      "bytes": 758
+    },
+    {
+      "dest": "docs/upstream/paperfit/commands/show-status.md",
+      "source": ".claude/commands/show-status.md",
+      "sourceSha": "c33be7d63ce3da6d9a5747bf544ec89c4b5e18923bd4815e2f3bab9a716235b7",
+      "transform": "none",
+      "bytes": 967
+    },
+    {
+      "dest": "docs/upstream/paperfit/LICENSE",
+      "source": "LICENSE",
+      "sourceSha": "5ebef3c28b01fe6c47fe24aaa6686d97015b66d2ee94b7fea87b92475824a771",
+      "transform": "none",
+      "bytes": 1065
+    }
+  ]
+}

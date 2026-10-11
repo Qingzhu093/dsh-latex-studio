@@ -1,0 +1,71 @@
+{
+  "name": "dsh-latex-studio",
+  "version": "0.1.0",
+  "description": "MiKTeX-native LaTeX compile & VTO typesetting loop for DeepSeek Harness (two command systems: daily compile + full VTO).",
+  "type": "module",
+  "main": "./lib/index.js",
+  "license": "MIT",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0",
+    "dsh": ">=0.2.0-rc.2"
+  },
+  "files": [
+    "lib",
+    "skills",
+    "docs",
+    "test",
+    "tools/verify-pdf-read.mjs",
+    "tools/install-skills.mjs",
+    "tools/vendor-paperfit-specs.mjs",
+    "tools/doctor.mjs",
+    "tools/install.mjs",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "latex",
+    "miktex",
+    "typesetting"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.4",
+    "@deepseek-ai/dsh-tools": "^0.2.0-rc.2",
+    "@deepseek-ai/schemastery": "~3.18.4"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.4",
+    "@deepseek-ai/dsh-agent": "^0.2.0-rc.2",
+    "@deepseek-ai/dsh-invariants": "^0.2.0-rc.2",
+    "@deepseek-ai/dsh-llm": "^0.2.0-rc.2",
+    "@deepseek-ai/dsh-ptc-runtime": "^0.2.0-rc.2",
+    "@deepseek-ai/dsh-sandbox": "^0.2.0-rc.2",
+    "@deepseek-ai/dsh-sandbox-policy": "^0.2.0-rc.2",
+    "@deepseek-ai/dsh-scope": "^0.2.0-rc.2",
+    "@deepseek-ai/dsh-session": "^0.2.0-rc.2",
+    "@deepseek-ai/dsh-system-prompt": "^0.2.0-rc.2",
+    "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-user-approval": "^0.2.0-rc.2",
+    "@deepseek-ai/schemastery": "3.18.4"
+  },
+  "scripts": {
+    "test": "node test/run-all.mjs",
+    "doctor": "node tools/doctor.mjs",
+    "install-plugin": "node tools/install.mjs",
+    "install-skills": "node tools/install-skills.mjs",
+    "vendor-specs": "node tools/vendor-paperfit-specs.mjs"
+  }
+}

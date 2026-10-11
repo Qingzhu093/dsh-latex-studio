@@ -1,0 +1,92 @@
+{
+  "version": "1.0",
+  "agents": {
+    "orchestrator": {
+      "primary": true,
+      "description": "主调度器，管理闭环状态机",
+      "triggers": [
+        "/fix-layout",
+        "/adjust-length",
+        "/migrate-template"
+      ]
+    },
+    "rule-engine": {
+      "order": 1,
+      "input": [
+        "compile.log"
+      ],
+      "output": [
+        "rule_report.json"
+      ],
+      "blocking": true
+    },
+    "layout-detective": {
+      "order": 2,
+      "input": [
+        "page_images/",
+        "rule_report.json"
+      ],
+      "output": [
+        "visual_diagnosis.json"
+      ],
+      "requires_page_images": true
+    },
+    "code-surgeon": {
+      "order": 3,
+      "input": [
+        "visual_diagnosis.json",
+        "rule_report.json"
+      ],
+      "output": [
+        "modified_files/",
+        "code_changes.json"
+      ],
+      "skills": [
+        "overflow-repair",
+        "float-optimizer",
+        "consistency-polisher",
+        "space-util-fixer",
+        "template-migrator"
+      ]
+    },
+    "semantic-polish": {
+      "order": 4,
+      "input": [
+        "semantic_request.json"
+      ],
+      "output": [
+        "semantic_changes.json"
+      ],
+      "triggered_by": [
+        "code-surgeon",
+        "space-util-fixer"
+      ]
+    },
+    "quality-gatekeeper": {
+      "order": 5,
+      "input": [
+        "all_reports/",
+        "evidence/"
+      ],
+      "output": [
+        "decision.json",
+        "diagnostic_report.md"
+      ],
+      "final": true
+    }
+  },
+  "routing": {
+    "A": "space-util-fixer",
+    "B": "float-optimizer",
+    "C": "consistency-polisher",
+    "D": "overflow-repair",
+    "E": "template-migrator",
+    "skill_owner": {
+      "space-util-fixer": "code-surgeon",
+      "float-optimizer": "code-surgeon",
+      "consistency-polisher": "code-surgeon",
+      "overflow-repair": "code-surgeon",
+      "template-migrator": "code-surgeon"
+    }
+  }
+}

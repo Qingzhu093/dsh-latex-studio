@@ -1,0 +1,30 @@
+{
+  "source": "PaperFit (MIT) config/",
+  "generatedAt": "2026-10-10T13:16:28.272Z",
+  "files": {
+    "agent_roles.yaml": {
+      "out": "D:\\Documents\\deepseek harness\\DSH插件管理\\dsh-latex-studio\\lib\\data\\agent_roles.json",
+      "repairedLines": 2
+    },
+    "content_boundaries.yaml": {
+      "out": "D:\\Documents\\deepseek harness\\DSH插件管理\\dsh-latex-studio\\lib\\data\\content_boundaries.json",
+      "repairedLines": 57
+    },
+    "layout_rules.yaml": {
+      "out": "D:\\Documents\\deepseek harness\\DSH插件管理\\dsh-latex-studio\\lib\\data\\layout_rules.json",
+      "repairedLines": 1
+    },
+    "templates.yaml": {
+      "out": "D:\\Documents\\deepseek harness\\DSH插件管理\\dsh-latex-studio\\lib\\data\\templates.json",
+      "repairedLines": 90
+    },
+    "vto_taxonomy.yaml": {
+      "out": "D:\\Documents\\deepseek harness\\DSH插件管理\\dsh-latex-studio\\lib\\data\\vto_taxonomy.json",
+      "repairedLines": 183
+    },
+    "writing_rules.yaml": {
+      "out": "D:\\Documents\\deepseek harness\\DSH插件管理\\dsh-latex-studio\\lib\\data\\writing_rules.json",
+      "repairedLines": 21
+    }
+  }
+}

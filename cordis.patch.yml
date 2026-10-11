@@ -1,0 +1,23 @@
+# dsh-latex-studio bundle layer.
+#
+# This file inserts ONE plugin row and deliberately carries NO `config:` block.
+#
+# Why (this is the single most important convention in this package):
+#   * A patch replaces the target row's WHOLE `config` value — it does not
+#     deep-merge keys ("打包与安装插件"). Duplicating the 20 defaults here meant
+#     that any user who overrode one field in their profile patch silently lost
+#     the other 19.
+#   * Cordis validates config with the exported Schemastery `Config` schema
+#     before `apply` runs and fills every omitted field from the schema's own
+#     `.default()` ("插件配置"). The schema is therefore already a complete
+#     source of defaults, and `lib/config.js` DEFAULTS mirrors it for the
+#     kernels/tests.
+#   * With no config block, defaults live in exactly TWO places
+#     (`lib/index.js` schema and `lib/config.js`), enforced by
+#     `test/config.test.mjs`. Before this change they lived in three and drifted.
+#
+# To change a default, edit the schema (authoritative at runtime) and mirror it
+# in `lib/config.js`, then run `npm test`.
+- insert:
+    - id: latex-studio
+      name: 'dsh-latex-studio'

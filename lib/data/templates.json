@@ -1,0 +1,249 @@
+{
+  "version": "1.0",
+  "description": "常见 LaTeX 模板的排版参数，供 template-migrator 技能调用",
+  "templates": {
+    "ICLR2025": {
+      "name": "ICLR 2025",
+      "documentclass": "\\documentclass{iclr2025}",
+      "column_type": "single",
+      "default_font_size": "10pt",
+      "text_width": "6.5in",
+      "column_width": null,
+      "default_figure_width": "\\linewidth",
+      "default_table_width": "\\linewidth",
+      "expected_pages": 9,
+      "float_behavior": "figures and tables float within single column",
+      "forbidden_packages": [
+        "fullpage",
+        "geometry"
+      ],
+      "required_packages": [
+        "times",
+        "mathptmx"
+      ],
+      "macro_substitutions": {
+        "\\theoremstyle": "Use \\newtheorem directly"
+      },
+      "page_margins": "1in all sides",
+      "notes": "ICLR 使用单栏格式，正文约 9 页。不接受跨栏图表。"
+    },
+    "ECCV2024": {
+      "name": "ECCV 2024",
+      "documentclass": "\\documentclass[10pt,twocolumn]{article}",
+      "column_type": "double",
+      "default_font_size": "10pt",
+      "text_width": "7.0in",
+      "column_width": "3.3in",
+      "default_figure_width": "\\columnwidth",
+      "default_table_width": "\\columnwidth",
+      "expected_pages": 14,
+      "float_behavior": "single column floats use [htbp]; wide floats use figure* [t]",
+      "forbidden_packages": [
+        "amsthm",
+        "algorithm2e"
+      ],
+      "required_packages": [
+        "graphicx",
+        "amsmath",
+        "amssymb",
+        "subfigure"
+      ],
+      "macro_substitutions": {
+        "\\theoremstyle": "Remove and use \\newtheorem without amsthm"
+      },
+      "page_margins": "1in top/bottom, 0.75in left/right",
+      "notes": "双栏模板。跨栏图表（figure*）仅能放置在页顶。"
+    },
+    "NeurIPS2025": {
+      "name": "NeurIPS 2025",
+      "documentclass": "\\documentclass{neurips_2025}",
+      "column_type": "single",
+      "default_font_size": "11pt",
+      "text_width": "5.5in",
+      "column_width": null,
+      "default_figure_width": "\\linewidth",
+      "default_table_width": "\\linewidth",
+      "expected_pages": 9,
+      "float_behavior": "standard single column floats",
+      "forbidden_packages": [
+        "fullpage",
+        "setspace",
+        "titlesec"
+      ],
+      "required_packages": [
+        "times",
+        "mathptmx"
+      ],
+      "macro_substitutions": {},
+      "page_margins": "1in all sides",
+      "notes": "NeurIPS 使用单栏，正文严格 9 页，含附录可超。"
+    },
+    "CVPR2024": {
+      "name": "CVPR 2024",
+      "documentclass": "\\documentclass[10pt,twocolumn,letterpaper]{article}",
+      "column_type": "double",
+      "default_font_size": "10pt",
+      "text_width": "7.0in",
+      "column_width": "3.3in",
+      "default_figure_width": "\\columnwidth",
+      "default_table_width": "\\columnwidth",
+      "expected_pages": 8,
+      "float_behavior": "similar to ECCV; wide floats at top of pages",
+      "forbidden_packages": [
+        "amsthm"
+      ],
+      "required_packages": [
+        "cvpr",
+        "graphicx",
+        "amsmath"
+      ],
+      "macro_substitutions": {
+        "\\theoremstyle": "Use \\newtheorem directly"
+      },
+      "page_margins": "0.75in left/right, 1in top/bottom",
+      "notes": "CVPR 双栏，正文 8 页，参考文献不计入页数限制。"
+    },
+    "IEEE": {
+      "name": "IEEE Transactions",
+      "documentclass": "\\documentclass[10pt,twocolumn,twoside]{IEEEtran}",
+      "column_type": "double",
+      "default_font_size": "10pt",
+      "text_width": "7.0in",
+      "column_width": "3.3in",
+      "default_figure_width": "\\columnwidth",
+      "default_table_width": "\\columnwidth",
+      "expected_pages": null,
+      "float_behavior": "IEEEtran 使用特有的浮动体放置规则，支持 dblfloatfix 宏包",
+      "forbidden_packages": [
+        "algorithm2e",
+        "subfigure"
+      ],
+      "required_packages": [
+        "graphicx",
+        "amsmath",
+        "cite"
+      ],
+      "macro_substitutions": {
+        "algorithm2e": "Use algorithmic or algorithm2e with compatibility option"
+      },
+      "page_margins": "0.75in left/right, 1in top/bottom",
+      "notes": "IEEEtran 对浮动体有特殊处理，跨栏图表可使用 figure* 和 table*。"
+    },
+    "ACL2024": {
+      "name": "ACL 2024",
+      "documentclass": "\\documentclass[11pt]{article}",
+      "column_type": "single",
+      "default_font_size": "11pt",
+      "text_width": "6.0in",
+      "column_width": null,
+      "default_figure_width": "\\linewidth",
+      "default_table_width": "\\linewidth",
+      "expected_pages": 8,
+      "float_behavior": "standard single column floats",
+      "forbidden_packages": [
+        "geometry"
+      ],
+      "required_packages": [
+        "acl",
+        "times"
+      ],
+      "macro_substitutions": {},
+      "page_margins": "1in all sides",
+      "notes": "ACL 使用 ACL 官方样式文件 acl.sty。"
+    },
+    "ICML2024": {
+      "name": "ICML 2024",
+      "documentclass": "\\documentclass{icml2024}",
+      "column_type": "single",
+      "default_font_size": "10pt",
+      "text_width": "6.0in",
+      "column_width": null,
+      "default_figure_width": "\\linewidth",
+      "default_table_width": "\\linewidth",
+      "expected_pages": 8,
+      "float_behavior": "single column, supports wide tables",
+      "forbidden_packages": [
+        "geometry"
+      ],
+      "required_packages": [
+        "times"
+      ],
+      "macro_substitutions": {},
+      "page_margins": "1in all sides",
+      "notes": "ICML 单栏，8 页正文，附录无限。"
+    },
+    "AAAI2025": {
+      "name": "AAAI 2025",
+      "documentclass": "\\documentclass[letterpaper,twocolumn,10pt]{article}",
+      "column_type": "double",
+      "default_font_size": "10pt",
+      "text_width": "7.0in",
+      "column_width": "3.3in",
+      "default_figure_width": "\\columnwidth",
+      "default_table_width": "\\columnwidth",
+      "expected_pages": 7,
+      "float_behavior": "双栏，跨栏图表仅支持页顶",
+      "forbidden_packages": [],
+      "required_packages": [
+        "aaai25",
+        "times"
+      ],
+      "macro_substitutions": {},
+      "page_margins": "0.75in left/right, 1in top/bottom",
+      "notes": "AAAI 使用双栏，7 页正文，技术报告可扩展至 8 页。"
+    }
+  },
+  "defaults": {
+    "single_column": {
+      "default_figure_width": "\\linewidth",
+      "default_table_width": "\\linewidth",
+      "float_behavior": "standard"
+    },
+    "double_column": {
+      "default_figure_width": "\\columnwidth",
+      "default_table_width": "\\columnwidth",
+      "float_behavior": "figures use figure* for wide content"
+    },
+    "expected_pages_fallback": 8,
+    "page_margins_fallback": "1in all sides"
+  },
+  "detection_rules": [
+    {
+      "pattern": "iclr2025",
+      "template": "ICLR2025"
+    },
+    {
+      "pattern": "neurips",
+      "template": "NeurIPS2025"
+    },
+    {
+      "pattern": "cvpr",
+      "template": "CVPR2024"
+    },
+    {
+      "pattern": "eccv",
+      "template": "ECCV2024"
+    },
+    {
+      "pattern": "IEEEtran",
+      "template": "IEEE"
+    },
+    {
+      "pattern": "acl",
+      "template": "ACL2024"
+    },
+    {
+      "pattern": "icml",
+      "template": "ICML2024"
+    },
+    {
+      "pattern": "aaai",
+      "template": "AAAI2025"
+    },
+    {
+      "pattern": "twocolumn",
+      "template": null,
+      "column_type": "double"
+    }
+  ]
+}
