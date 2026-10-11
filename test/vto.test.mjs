@@ -33,7 +33,7 @@ import {
 import { renderPages, parsePages, readPngSize, resolveExecutable, countPdfPages, INSTALL_ADVICE } from '../lib/core/render.js'
 import { checkPdfRead, normalizeScope, describeGate } from '../lib/core/pdfread.js'
 import { auxFingerprint } from '../lib/core/logparse.js'
-import { writeRoundReport, templatePlaceholders, defectProgress, fillTemplate } from '../lib/core/report.js'
+import { writeRoundReport, defectProgress, ledgerProgress } from '../lib/core/report.js'
 import {
   safeRel,
   resolveInside,
@@ -46,8 +46,6 @@ import {
   inferColumnType,
   findImagePath,
   makeCallReadPdf,
-  collectMachineSignals,
-  machineSignalLine,
   registerVto,
 } from '../lib/tools/vto.js'
 
@@ -630,28 +628,44 @@ test('pdfread: unknown scope falls back to external-only and describeGate explai
 // report
 // ---------------------------------------------------------------------------
 
-test('report: writeRoundReport fills the vendored template with no unresolved placeholders', () => {
+test('report: writeRoundReport renders one ledger table and ledger-derived progress', () => {
   const workDir = resolveWorkDir(tmp(), '.latex-studio')
+  const ledger = [
+    { id: 'A1', page: 1, severity: 'major', status: 'open', evidence: 'widow', gateBlocking: true, firstSeenRound: 1, fixRound: null },
+    { id: 'C3', page: 2, severity: 'minor', status: 'fixed', evidence: 'caption', gateBlocking: false, firstSeenRound: 1, fixRound: 1 },
+  ]
   const written = writeRoundReport(workDir, 1, {
     verdict: 'CONTINUE',
-    compile: { compileSuccess: true, pages: 9, errors: [{ message: 'e' }], warnings: [{ message: 'w' }] },
-    defectsBefore: { A1: 2, A5: 1, B1: 1 },
-    defectsAfter: { A1: 1 },
+    compile: { status: 'passed', via: 'latexmk', errorCount: 0, warningCount: 0 },
+    ledger,
     changes: ['调整浮动体位置'],
-    gate: [{ name: 'compile', ok: true, detail: 'passed' }],
+    gate: { compile: { status: 'pass' }, ledger: { status: 'warn', blockingOpen: ['A1'] } },
     conclusion: 'CONTINUE',
   })
   assert.ok(fs.existsSync(written.mdPath))
   assert.ok(fs.existsSync(written.jsonPath))
   const markdown = fs.readFileSync(written.mdPath, 'utf8')
-  assert.deepEqual(templatePlaceholders(markdown), [])
+  assert.ok(!/\{\{[A-Z_]+\}\}/.test(markdown), 'no placeholder may remain')
   assert.ok(markdown.includes('第 1 轮'))
   assert.ok(markdown.includes('调整浮动体位置'))
+  assert.ok(markdown.includes('latexmk'), 'the driver must be reported')
+  assert.equal((markdown.match(/^\| 缺陷 \| 页码 /gm) || []).length, 1)
+  const progressLine = markdown.split(String.fromCharCode(10)).find((l) => l.startsWith("| A |"))
+  assert.ok(progressLine, 'expected an A-category progress row')
+  assert.match(progressLine, /\| 1 \| 1 \|/)
   const sidecar = JSON.parse(fs.readFileSync(written.jsonPath, 'utf8'))
-  assert.deepEqual(sidecar.unresolvedPlaceholders, [])
   assert.equal(sidecar.round, 1)
 })
-
+test('report: ledgerProgress derives progress from ledger status', () => {
+  const progress = ledgerProgress([
+    { id: 'A1', status: 'open', firstSeenRound: 1 },
+    { id: 'A2', status: 'fixed', firstSeenRound: 1 },
+    { id: 'B1', status: 'open', firstSeenRound: 2 },
+  ], 2)
+  assert.equal(progress.totals.init, 3)
+  assert.equal(progress.totals.remaining, 2)
+  assert.equal(progress.rows[0][3], '50%')
+})
 test('report: defectProgress aggregates by category with percentages', () => {
   const progress = defectProgress({ defectsBefore: { A1: 2, A2: 2, B1: 1, D1: 1 }, defectsAfter: { A1: 1, B1: 1 } })
   assert.equal(progress.totals.init, 6)
@@ -660,11 +674,6 @@ test('report: defectProgress aggregates by category with percentages', () => {
   assert.equal(progress.rows[5][2], 2)
 })
 
-test('report: fillTemplate leaves unresolved keys as the fallback dash', () => {
-  assert.equal(fillTemplate('a {{KNOWN}} b {{MISSING}}', { KNOWN: 'x' }), 'a x b —')
-})
-
-// ---------------------------------------------------------------------------
 // vto.js pure helpers
 // ---------------------------------------------------------------------------
 
@@ -766,7 +775,7 @@ async function fixtureProject() {
   return { project, source }
 }
 
-test('vto: registerVto registers the five tools with the real defineTool (auto-skips without the peer dep)', async (t) => {
+test('vto: registerVto registers the six tools with the real defineTool (auto-skips without the peer dep)', async (t) => {
   if (!(await loadDshTools())) {
     t.skip('@deepseek-ai/dsh-tools is not resolvable from this workspace')
     return
@@ -774,8 +783,8 @@ test('vto: registerVto registers the five tools with the real defineTool (auto-s
   const defs = []
   const ctx = { tools: { register: (d) => defs.push(d) }, get: () => undefined }
   const result = registerVto(ctx, { uploadScope: 'external-only' })
-  assert.deepEqual(result.registered, ['vto_start', 'vto_inspect', 'vto_fix', 'vto_verify', 'vto_report'])
-  assert.equal(defs.length, 5)
+  assert.deepEqual(result.registered, ['vto_start', 'vto_inspect', 'vto_fix', 'vto_verify', 'vto_report', 'vto_rollback'])
+  assert.equal(defs.length, 6)
   for (const definition of defs) {
     assert.equal(typeof definition.execute, 'function')
     assert.equal(definition.parameters.type, 'object')
@@ -843,10 +852,11 @@ test('vto: full loop through the real tools (auto-skips without the peer dep)', 
   assert.ok(destructive.contentIntegrity.protectedLost.includes('cite:smith2020'))
   assert.ok(fs.readFileSync(path.join(project, 'main.tex'), 'utf8').includes(BS + 'cite{smith2020}'))
 
-  const report = await call('vto_report', { verdict: 'pass', changes: ['wording'], defectsAfter: { A1: 0 } })
+  const report = await call('vto_report', { verdict: 'pass', changes: ['wording'], defects: [{ id: 'A1', page: 1, severity: 'major', status: 'fixed' }] })
   assert.equal(report.ok, true)
+  assert.equal(report.ledger.entries, 1)
   const markdown = fs.readFileSync(path.join(project, report.mdPath), 'utf8')
-  assert.deepEqual(templatePlaceholders(markdown), [])
+  assert.ok(!/\{\{[A-Z_]+\}\}/.test(markdown))
 
   const escaped = await call('vto_fix', { file: 'C:/windows/system32/drivers/etc/hosts', find: 'a', replace: 'b' })
   assert.equal(escaped.ok, false)
@@ -897,59 +907,6 @@ test('vto: buildChecklist exposes numeric thresholds from layout_rules.json', ()
     assert.ok(hasNumbers, item.id + ' carries no numeric bar at all')
   }
 })
-
-test('vto: collectMachineSignals reads rendered pages and abstains for single column', () => {
-  const project = tempDir('dsh-signals-')
-  try {
-    // A two-column synthetic page with a deliberate left-column void.
-    const png = makeTwoColumnPage()
-    const pagePath = path.join(project, 'page-001.png')
-    fs.writeFileSync(pagePath, png)
-
-    const double = collectMachineSignals([{ index: 1, path: pagePath }], { columnType: 'double' })
-    assert.equal(double.available, true)
-    assert.equal(double.pages.length, 1)
-    assert.equal(double.pages[0].layout, 'double')
-    assert.ok(double.pages[0].a5_candidates.length >= 1, 'the planted void must be detected')
-    assert.deepEqual(double.a5CandidatePages, [1])
-    assert.equal(double.byDefect.A5.detector, 'detect_column_void')
-    assert.ok(double.byDefect.A5.candidates >= 1)
-    // Page-level metrics must be present regardless of layout.
-    assert.ok(double.pages[0].inkRatio > 0)
-    assert.ok(double.pages[0].contentBox)
-
-    const single = collectMachineSignals([{ index: 1, path: pagePath }], { columnType: 'single' })
-    assert.deepEqual(single.a5CandidatePages, [], 'single column must not raise A5')
-    assert.equal(single.pages[0].layout, 'single')
-    assert.deepEqual(single.pages[0].a5_candidates, [])
-
-    // Missing page image degrades per page instead of throwing.
-    const missing = collectMachineSignals([{ index: 9, path: path.join(project, 'nope.png') }], { columnType: 'double' })
-    assert.equal(missing.pages[0].ok, false)
-    assert.match(missing.pages[0].reason, /READ_FAILED/)
-
-    // No pages at all is reported, not assumed clean.
-    const none = collectMachineSignals([], { columnType: 'double' })
-    assert.equal(none.available, false)
-    assert.ok(none.reason)
-  } finally {
-    fs.rmSync(project, { recursive: true, force: true })
-  }
-})
-
-test('vto: machineSignalLine states candidates without asserting a defect', () => {
-  assert.equal(machineSignalLine(undefined), null)
-  assert.match(machineSignalLine({ available: false, reason: '没有页图可供机检' }), /跳过/)
-  assert.match(machineSignalLine({ available: true, pages: [{ ok: true, a5_candidates: [] }] }), /无 A5 列空洞候选/)
-  const withCandidate = machineSignalLine({
-    available: true,
-    pages: [{ index: 4, ok: true, a5_candidates: [{ column: 'left', void_ratio_of_column: 0.42 }] }],
-  })
-  assert.match(withCandidate, /A5 候选 1 处/)
-  assert.match(withCandidate, /第 4 页 left 42%/)
-  assert.doesNotMatch(withCandidate, /缺陷/, 'the line must not claim a defect exists')
-})
-
 
 test('vto: applyEdits inserts replacements LITERALLY ($ in LaTeX math must survive)', () => {
   // `String.replace(str, str)` expands $&, $`, $', $1 and $$ in the replacement.

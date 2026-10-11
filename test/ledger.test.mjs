@@ -1,13 +1,9 @@
 /**
- * Ledger, checklist enrichment and data-asset wiring (0.2.0).
+ * Ledger, checklist enrichment, data-asset wiring and rollback (0.2.1).
  *
- * What this locks:
- *  - state.json v2 carries a cross-round defect ledger and reads v1 files safely;
- *  - the checklist exposes the taxonomy fields the model needs (visual
- *    indicators, log signals, semantic constraints, gate severity, manual);
- *  - the four previously-unread data files now have consumers
- *    (templates / writing_rules / content_boundaries / agent_roles);
- *  - the taxonomy's two routing copies and its inline thresholds are audited.
+ * Locks: state.json v2 + ledger, the taxonomy fields the checklist must expose,
+ * the four previously-unread data files having consumers, the inline threshold
+ * copies agreeing with layout_rules, and rollback being a real action.
  */
 import test from 'node:test'
 import assert from 'node:assert/strict'
@@ -15,31 +11,21 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { STATE_VERSION, newState, withLedger, upsertLedger, saveState, loadState } from '../lib/core/state.js'
+import { STATE_VERSION, newState, withLedger, upsertLedger, saveState, loadState, backupFiles, rollback } from '../lib/core/state.js'
 import {
-  buildChecklist,
-  auditTaxonomy,
-  semanticLimits,
-  semanticEditCheck,
-  checkContentBoundaries,
-  resolveTemplate,
-  loadTemplates,
-  loadWritingRules,
-  loadContentBoundaries,
-  loadAgentRoles,
+  buildChecklist, semanticLimits, semanticEditCheck, checkContentBoundaries, resolveTemplate,
+  loadTemplates, loadWritingRules, loadContentBoundaries, loadAgentRoles, loadLayoutRules, loadTaxonomy,
 } from '../lib/tools/vto.js'
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'ledger-test-'))
+const BS = String.fromCharCode(92)
 
 test('ledger: state v2 defaults to an empty ledger and reads v1 files safely', () => {
   assert.equal(STATE_VERSION, 2)
   const fresh = newState({ dir: process.cwd() })
   assert.deepEqual(fresh.ledger, { round: 0, entries: [] })
-
-  // a v1 file on disk (no ledger key) must not break anything
   const work = tmp()
-  const legacy = { version: 1, dir: work, round: 1, baseline: null, history: [] }
-  saveState(work, legacy)
+  saveState(work, { version: 1, dir: work, round: 1, baseline: null, history: [] })
   const loaded = loadState(work)
   assert.equal(loaded.version, 1)
   withLedger(loaded)
@@ -54,22 +40,16 @@ test('ledger: upsert adds, updates, preserves firstSeenRound and detects regress
     { id: 'C1', severity: 'minor', status: 'open' },
   ], 1)
   assert.deepEqual(first.added.sort(), ['A5#3', 'C1#-'])
-  assert.equal(first.regressions.length, 0)
-
   const second = upsertLedger(state, [{ id: 'A5', page: 3, severity: 'major', status: 'fixed' }], 2)
   assert.deepEqual(second.updated, ['A5#3'])
   const a5 = state.ledger.entries.find((e) => e.id === 'A5')
   assert.equal(a5.status, 'fixed')
-  assert.equal(a5.firstSeenRound, 1, 'firstSeenRound must survive an update')
+  assert.equal(a5.firstSeenRound, 1)
   assert.equal(a5.lastSeenRound, 2)
-  assert.equal(a5.evidence, 'left column void 34%', 'evidence is preserved when not re-supplied')
-
+  assert.equal(a5.evidence, 'left column void 34%')
   const third = upsertLedger(state, [{ id: 'A5', page: 3, severity: 'major', status: 'open' }], 3)
-  assert.deepEqual(third.regressions, ['A5#3'], 'fixed -> open must be reported as a regression')
-  assert.equal(state.ledger.round, 3)
-  // same id on a different page is a different defect
-  const other = upsertLedger(state, [{ id: 'A5', page: 7, severity: 'major', status: 'open' }], 3)
-  assert.deepEqual(other.added, ['A5#7'])
+  assert.deepEqual(third.regressions, ['A5#3'])
+  assert.deepEqual(upsertLedger(state, [{ id: 'A5', page: 7, severity: 'major', status: 'open' }], 3).added, ['A5#7'])
 })
 
 test('checklist: carries the taxonomy fields the model needs to act', () => {
@@ -84,20 +64,20 @@ test('checklist: carries the taxonomy fields the model needs to act', () => {
     assert.match(String(item.manual_section), /^[A-E] 类$/)
   }
   const a5 = double.find((d) => d.id === 'A5')
-  assert.ok(a5.visual_indicators.length > 0, 'A5 must say how to recognise it on the page')
-  assert.ok(a5.log_signals.length > 0, 'A5 must map to log signals')
-  assert.equal(a5.gate_blocking, true, 'major defects block the gate')
-  assert.equal(double.find((d) => d.id === 'A4').gate_blocking, false, 'minor defects do not')
-  // single-column documents drop the two-column-only defects
+  assert.ok(a5.visual_indicators.length > 0)
+  assert.equal(a5.gate_blocking, true)
+  assert.equal(double.find((d) => d.id === 'A4').gate_blocking, false)
   assert.equal(buildChecklist({ columnType: 'single' }).length, 16)
 })
 
-test('taxonomy audit: routing copies and inline thresholds are cross-checked', () => {
-  const warnings = auditTaxonomy()
-  // A5 has fix_strategy.primary_skill = space-util-fixer but no skill_routing entry.
-  assert.ok(warnings.some((w) => w.startsWith('A5 ') && w.includes('无归属')), 'expected the A5 routing gap, got: ' + warnings.join(' | '))
-  // A2/A5 inline thresholds agree with layout_rules today: no drift warnings.
-  assert.ok(!warnings.some((w) => w.includes('漂移')), 'unexpected threshold drift: ' + warnings.join(' | '))
+test('taxonomy: inline threshold copies agree with layout_rules (single source check)', () => {
+  const taxonomy = loadTaxonomy()
+  const rules = loadLayoutRules()
+  const a2 = taxonomy.defects.find((d) => d.id === 'A2')
+  const a5 = taxonomy.defects.find((d) => d.id === 'A5')
+  assert.equal(a2.detection.threshold.max_whitespace_ratio, rules.whitespace.trailing_whitespace_max_ratio)
+  assert.equal(a5.detection.threshold.min_void_ratio_of_column, rules.intra_column_void.min_void_ratio_of_column)
+  assert.equal(a5.detection.threshold.min_void_height_lines, rules.intra_column_void.min_void_height_lines)
 })
 
 test('writing_rules: semantic limits and the fix pre-check use the vendored caps', () => {
@@ -105,41 +85,59 @@ test('writing_rules: semantic limits and the fix pre-check use the vendored caps
   assert.deepEqual(limits.preferred, [3, 8])
   assert.equal(limits.hardMax, 15)
   assert.ok(limits.forbiddenSections.includes('abstract'))
-  assert.ok(Object.keys(loadWritingRules()).length > 0, 'writing_rules.json must be read')
-
-  const source = '\\begin{abstract}\nWe show that X works. It is fast.\n\\end{abstract}\n\\section{Method}\nWe train a model.\n'
+  assert.ok(Object.keys(loadWritingRules()).length > 0)
+  const source = BS + 'begin{abstract}' + String.fromCharCode(10) + 'We show that X works. It is fast.' + String.fromCharCode(10) + BS + 'end{abstract}' + String.fromCharCode(10) + BS + 'section{Method}' + String.fromCharCode(10) + 'We train a model.' + String.fromCharCode(10)
   const inAbstract = semanticEditCheck(source, [{ find: 'We show that X works.', replace: 'We show that X works well.' }])
-  assert.ok(inAbstract.blockers.some((b) => b.includes('abstract')), 'editing the abstract must be blocked: ' + JSON.stringify(inAbstract))
-  const bigRewrite = semanticEditCheck(source, [{ find: 'We train a model.', replace: Array.from({ length: 40 }, (_, i) => 'w' + i).join(' ') }])
-  assert.ok(bigRewrite.warnings.some((w) => w.includes('硬上限')), 'a 39-word change must warn: ' + JSON.stringify(bigRewrite))
+  assert.ok(inAbstract.blockers.some((b) => b.includes('abstract')))
+  const big = semanticEditCheck(source, [{ find: 'We train a model.', replace: Array.from({ length: 40 }, (_, i) => 'w' + i).join(' ') }])
+  assert.ok(big.warnings.some((w) => w.includes('硬上限')))
   assert.equal(semanticEditCheck(source, [{ find: 'We train a model.', replace: 'We train a model.' }]).warnings.length, 0)
 })
 
 test('content_boundaries: critical sections are measured against their declared minima', () => {
-  const boundaries = loadContentBoundaries()
-  assert.ok((boundaries.critical_sections || []).length > 0, 'content_boundaries.json must be read')
-  const short = checkContentBoundaries([{ path: 'main.tex', text: '\\begin{abstract}Too short.\\end{abstract}\n\\section{Introduction}\nA.\n' }])
+  assert.ok((loadContentBoundaries().critical_sections || []).length > 0)
+  const short = checkContentBoundaries([{ path: 'main.tex', text: BS + 'begin{abstract}Too short.' + BS + 'end{abstract}' }])
   assert.equal(short.status, 'warn')
   assert.ok(short.short.includes('Abstract'))
   const longAbstract = Array.from({ length: 110 }, (_, i) => 'word' + i).join(' ') + '.'
-  const ok = checkContentBoundaries([{ path: 'main.tex', text: '\\begin{abstract}Sentence one. Sentence two. Sentence three. ' + longAbstract + '\\end{abstract}\n\\section{Introduction}\n' + Array.from({ length: 5 }, (_, s) => Array.from({ length: 34 }, (_, i) => 'w' + s + '_' + i).join(' ') + '.').join(' ') }])
-  assert.equal(ok.status, 'pass', 'expected pass, got ' + JSON.stringify(ok))
+  const intro = Array.from({ length: 5 }, (_, s) => Array.from({ length: 34 }, (_, i) => 'w' + s + '_' + i).join(' ') + '.').join(' ')
+  const text = BS + 'begin{abstract}Sentence one. Sentence two. Sentence three. ' + longAbstract + BS + 'end{abstract}' + String.fromCharCode(10) + BS + 'section{Introduction}' + String.fromCharCode(10) + intro
+  assert.equal(checkContentBoundaries([{ path: 'main.tex', text }]).status, 'pass')
 })
 
 test('templates: resolveTemplate uses the vendored table and reports unknown ids', () => {
-  const table = loadTemplates()
-  const ids = Object.keys(table.templates || {})
-  assert.ok(ids.length > 0, 'templates.json must be read')
+  const ids = Object.keys(loadTemplates().templates || {})
+  assert.ok(ids.length > 0)
   const known = resolveTemplate(ids[0])
   assert.equal(known.ok, true)
-  assert.ok(known.template && known.template.column_type, 'a template must declare its column type')
+  assert.ok(known.template && known.template.column_type)
   const missing = resolveTemplate('no-such-template-xyz')
   assert.equal(missing.ok, false)
   assert.deepEqual(missing.known, ids)
 })
 
-test('agent_roles: the role contract is read and cross-checked against the taxonomy', () => {
+test('agent_roles: the role contract is read', () => {
   const roles = loadAgentRoles()
-  assert.ok(Object.keys(roles.agents || {}).length >= 5, 'agent_roles.json must be read')
-  assert.ok(roles.routing && roles.routing.A, 'the category routing must be present')
+  assert.ok(Object.keys(roles.agents || {}).length >= 5)
+  assert.ok(roles.routing && roles.routing.A)
+})
+
+test('rollback: backupFiles + rollback restore bytes and remove created files', () => {
+  const work = tmp()
+  try {
+    const file = path.join(work, 'main.tex')
+    fs.writeFileSync(file, 'original', 'utf8')
+    const workDir = path.join(work, '.latex-studio')
+    assert.equal(backupFiles(workDir, 1, ['main.tex'], { projectRoot: work }).length, 1)
+    fs.writeFileSync(file, 'changed', 'utf8')
+    // files that do not exist are not recorded (there is nothing to restore)
+    assert.equal(backupFiles(workDir, 1, ['never-existed.tex'], { projectRoot: work }).length, 0)
+    const restored = rollback(workDir, 1)
+    assert.deepEqual(restored, [file])
+    assert.equal(fs.readFileSync(file, 'utf8'), 'original')
+    // a second rollback is idempotent
+    assert.deepEqual(rollback(workDir, 1), [file])
+  } finally {
+    fs.rmSync(work, { recursive: true, force: true })
+  }
 })

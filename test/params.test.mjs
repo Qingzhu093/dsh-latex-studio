@@ -49,6 +49,8 @@ const BASIS = {
   'vto_verify.entry': 'project',
   'vto_verify.pdf': 'project',
   'vto_report.dir': 'workspace',
+  'vto_rollback.dir': 'workspace',
+  'vto_rollback.workDir': 'name',
 }
 
 /** Phrase each basis must state in the parameter description. */

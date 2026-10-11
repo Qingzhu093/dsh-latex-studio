@@ -1,5 +1,9 @@
 # P0 环境探针报告（T3 · env-lab）
 
+> ⚠️ **历史文档（采集于 2026-10-10）——结论可能已过期。**
+> 已确认过期的一条：**latexmk 现在可用**。本机装有 Git for Windows 自带的 Perl（`D:\Git\usr\bin\perl.exe`，5.38.2），`latexmk 4.88` 正常执行；0.2.0 起插件**可用即优先 latexmk**，不可用时才回落内置多趟驱动。
+> 因此下面 §B 的「latexmk 不可用 / 禁止依赖 latexmk」是**当时**的结论，已被取代；其余探针结论（Poppler/Ghostscript 随 MiKTeX、`read_pdf` 的 page 视图失败）仍然有效。
+
 > 采集窗口：2026-10-10 21:17 – 21:41（Asia/Shanghai），采集者：teammate `env-lab`。
 > **状态声明**：21:40:45 起用户开始对本机 MiKTeX 做「统一更新」。按用户与 Lead 的指令，此后**已停止一切 MiKTeX 调用**
 > （pdflatex / xelatex / mpm / initexmf / pdftoppm / mgs 等一律不再执行）。因此本报告所有输出均为**更新开始前**采集；

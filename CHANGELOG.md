@@ -3,7 +3,62 @@
 All notable changes to `dsh-latex-studio`. Versioning follows semver; in the 0.x
 range a breaking change moves the MINOR number.
 
+## 0.3.0 — 2026-10-11
+
+Cut the parts that only looked load-bearing. Three of the four cuts below were
+confirmed by reproducing them first (see each item).
+
+### Breaking
+
+- **Removed `lib/core/voidetect.js`** (~500 lines of PNG/Otsu/projection image
+  analysis). It only ever informed 1 of the 18 defect classes, its own contract
+  said the page image remains the arbiter, and its trailing-whitespace metric was
+  measuring the wrong thing: on the demo, a full page and a nearly empty page both
+  reported 0.1705, because the page number is the lowest ink on both. Removing it
+  changes no decision — the judgement is, and was, the page image plus the checklist.
+  `vto_inspect` no longer returns `machineSignals`.
+- **`vto_report` no longer takes `defectsBefore`/`defectsAfter`** and no longer
+  renders a template: the elimination-progress table is computed from the ledger,
+  so it can no longer disagree with the ledger table above it.
+- **`vto_inspect` no longer prints taxonomy self-check warnings** (`routingWarnings`):
+  every one of them pointed at a PaperFit skill that 0.2.0 had already stopped
+  registering — noise addressed to the model on every call.
+- The report template `lib/data/diagnostic_report.template.md` is gone; the report
+  is generated directly (no placeholders, no fallback template).
+
+### Added
+
+- **`vto_rollback({dir, round})` — rollback is now an action, not advice.** Every
+  `vto_fix({apply:true})` already wrote `backups/r<n>/`, and `vto_verify` returned
+  `rollbackTo`, but nothing could execute it; the caller had to copy files back by
+  hand. The new tool performs it from the manifest and refuses when there is none.
+
+### Fixed
+
+- The report printed its ledger header twice (template header + generated header)
+  and its progress table was all zeros (fed from model-typed arguments instead of
+  the ledger).
+- The compile-driver story was inconsistent in three places the model actually
+  reads — the `latex_build` tool description, `skills/latex-vto-loop`, and
+  `docs/INTERFACES.md` all still said "latexmk 不可用" while 0.2.0 both detected
+  and preferred it. All normative text now says: use latexmk when Perl is present,
+  otherwise fall back to the built-in multi-pass driver.
+- `docs/HANDOFF.md`, `docs/ACCEPTANCE.md`, `lib/core/compile.js`, `lib/core/env.js`
+  and `lib/config.js` carried the same stale claim; `docs/P0-PROBES.md` now opens
+  with a dated supersession banner.
+
+### Docs
+
+- New `README` §2.6 "环境要求与自助安装": the one hard dependency (MiKTeX), the
+  optional ones (Perl+latexmk, chktex, MinerU), what breaks without each, the exact
+  install command, and the self-install loop the model should run (`latex_doctor` →
+  run the advice commands → `latex_doctor({refresh:true})` → report what is still
+  missing instead of pretending).
+- New `docs/README.md` index that marks which documents are current and which are
+  history, plus naming rules (this plugin's names, no volatile numbers).
+
 ## 0.2.0 — 2026-10-11
+
 
 The "make the assets load-bearing" release: the previously decorative PaperFit
 material now has consumers, the tool parameters have one documented basis, and

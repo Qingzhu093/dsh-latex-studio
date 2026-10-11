@@ -46,7 +46,7 @@ description: VTO 18 类排版缺陷（A1-A5/B1-B4/C1-C3/D1-D3/E1-E3）的修复�
   - 段尾行长度小于栏宽的 1/4
   - 跨页段落断开位置不自然
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`space-util-fixer`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 全局 penalty 防护（\widowpenalty=10000, \clubpenalty=10000）
   - \looseness=-1 紧缩排版（消除小尾巴）
@@ -65,7 +65,7 @@ description: VTO 18 类排版缺陷（A1-A5/B1-B4/C1-C3/D1-D3/E1-E3）的修复�
   - 末页空白面积超过页面高度的 20%
   - 参考文献页底部大面积空白
 - **阈值**：`max_whitespace_ratio = 0.2`
-- **负责技能**：`space-util-fixer`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 调整浮动体位置，将图表前移填充空白
   - 微调段落间距或 \looseness
@@ -83,7 +83,7 @@ description: VTO 18 类排版缺陷（A1-A5/B1-B4/C1-C3/D1-D3/E1-E3）的修复�
 - **视觉判据**：
   - PDF 总页数与用户指定目标不符
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`space-util-fixer`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 若超页：压缩浮动体、缩减参考文献、精炼文字
   - 若不满页：扩写结论/讨论、微调图表尺寸、增加分析深度
@@ -99,7 +99,7 @@ description: VTO 18 类排版缺陷（A1-A5/B1-B4/C1-C3/D1-D3/E1-E3）的修复�
 - **视觉判据**：
   - 双栏布局末页左右栏底部高度差超过 2 行
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`space-util-fixer`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 使用 \balance 或 \flushend 宏包
   - 手动调整最后一节的分栏断点
@@ -120,7 +120,7 @@ description: VTO 18 类排版缺陷（A1-A5/B1-B4/C1-C3/D1-D3/E1-E3）的修复�
   - 可选自动化：paperfit run scripts/detect_column_void.py（OpenCV 行向墨迹投影，输出 a5_candidates）
 - **日志信号**：`LaTeX Warning: Float too large for page`、`Underfull \vbox (badness ...)`
 - **阈值**：`min_void_ratio_of_column = 0.3`、`min_void_height_lines = 8`
-- **负责技能**：`space-util-fixer`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 检查本页及前后页的 figure*/table* 与 \\clearpage、\\FloatBarrier；必要时前移/后移源码中的浮动环境
   - 移除不当的 \\、\\newpage、\\vfill；避免滥用 float 宏包 [H]
@@ -142,7 +142,7 @@ description: VTO 18 类排版缺陷（A1-A5/B1-B4/C1-C3/D1-D3/E1-E3）的修复�
   - 多个图表被压缩到同一页，导致所有图表尺寸异常偏小
 - **日志信号**：`LaTeX Warning: Float too large for page`、`LaTeX Warning: Float too large for column`
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`float-optimizer`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 调整浮动体位置参数为 [htbp]（增加 placement 灵活性）
   - 使用 \FloatBarrier 或\clearpage 控制浮动体边界
@@ -167,7 +167,7 @@ paperfit run scripts/extract_crossrefs.py main.tex --output data/crossrefs.json
 第三步：结合视觉检测
 - 从 PDF 页图或文本层提取图表实际渲染页码与首次引用页码
 - 若视觉页码差值 >= 2，记录缺陷
-- 若源码距离近但视觉距离远 → 典型 LaTeX 浮动体放置问题（使用 float-optimizer）
+- 若源码距离近但视觉距离远 → 典型 LaTeX 浮动体放置问题（见本节允许手法）
 - 若源码距离远且视觉距离远 → 需调整源码结构（移动引用或图表定义）
 
 第四步：尺寸异常检测
@@ -186,7 +186,7 @@ paperfit run scripts/extract_crossrefs.py main.tex --output data/crossrefs.json
   - 表格使用 \resizebox 导致字号不一致
 - **日志信号**：`Overfull \hbox (图片相关)`
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`fullwidth-fixers`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 图片设置 \includegraphics[width=\textwidth]
   - 表格使用 tabularx + \textwidth + 弹性 X 列
@@ -205,7 +205,7 @@ paperfit run scripts/extract_crossrefs.py main.tex --output data/crossrefs.json
 - **视觉判据**：
   - 同一页或连续两页出现 >=3 个图表且正文极少
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`float-optimizer`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 分散浮动体位置参数
   - 在图表间插入少量正文
@@ -222,7 +222,7 @@ paperfit run scripts/extract_crossrefs.py main.tex --output data/crossrefs.json
 - **视觉判据**：
   - 表格被分页符截断，表头未在第二页重复
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`float-optimizer`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 对于表格，使用 longtable 或 supertabular
   - 调整浮动体大小避免分页
@@ -242,7 +242,7 @@ paperfit run scripts/extract_crossrefs.py main.tex --output data/crossrefs.json
   - 不同表格的字号大小明显不一致
 - **日志信号**：`\resizebox 命令的过度使用`
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`consistency-polisher`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 移除 \resizebox，重构表格列格式
   - 统一使用 \small 或模板默认字号
@@ -261,7 +261,7 @@ paperfit run scripts/extract_crossrefs.py main.tex --output data/crossrefs.json
   - 矢量图与低分辨率位图混用
   - 不同图的配色、线条风格差异大
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`consistency-polisher`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 提示用户替换低质量图片
   - 若为矢量图，检查编译方式
@@ -280,7 +280,7 @@ paperfit run scripts/extract_crossrefs.py main.tex --output data/crossrefs.json
   - 有的以句号结尾，有的无标点
   - 表格标题位置不一致（有的在上，有的在下）
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`consistency-polisher`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 使用 \captionsetup 统一设置
   - 确保所有 caption 命令前后一致
@@ -300,7 +300,7 @@ paperfit run scripts/extract_crossrefs.py main.tex --output data/crossrefs.json
   - 内容伸出右边界，可能被截断
 - **日志信号**：`Overfull \hbox (pt 值) in paragraph`、`Overfull \hbox (pt 值) in alignment`
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`overflow-repair`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 对于文本：调整断词、引入 \- 连字符、微调句子
   - 对于表格：重构列格式、允许换行
@@ -319,7 +319,7 @@ paperfit run scripts/extract_crossrefs.py main.tex --output data/crossrefs.json
   - 公式在等号处未对齐
 - **日志信号**：`Overfull \hbox 在 equation 环境`
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`overflow-repair`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 将 equation 替换为 align、multline 或 split
   - 在运算符处断行并合理对齐
@@ -336,7 +336,7 @@ paperfit run scripts/extract_crossrefs.py main.tex --output data/crossrefs.json
   - URL 伸出右边界
 - **日志信号**：`Overfull \hbox 在参考文献区域`
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`overflow-repair`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 使用 \url 命令（可自动断行）
   - 在参考文献样式中启用断行
@@ -356,7 +356,7 @@ paperfit run scripts/extract_crossrefs.py main.tex --output data/crossrefs.json
   - 原单栏全宽图在双栏中仍占单栏，显得过小
   - 原双栏跨栏图在单栏中尺寸异常
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`template-migrator`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 检测图片宽高比，智能决定使用 figure 还是 figure*
   - 将 \textwidth 替换为 \linewidth 或 \columnwidth
@@ -373,7 +373,7 @@ paperfit run scripts/extract_crossrefs.py main.tex --output data/crossrefs.json
 - **视觉判据**：
   - PDF 总页数与目标模板预期不符
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`template-migrator`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 分析各章节信息密度，计算扩写/缩写弹性
   - 在 Discussion、Related Work 等处进行语义级扩写或精炼
@@ -391,7 +391,7 @@ paperfit run scripts/extract_crossrefs.py main.tex --output data/crossrefs.json
   - 编译失败或部分内容未渲染
 - **日志信号**：`Undefined control sequence`、`Option clash for package`
 - **阈值**：无显式阈值（人工判读）
-- **负责技能**：`template-migrator`
+- **执行**：按本节「允许手法」做一次最小改动，经 `vto_fix`（先 `apply:false` 预检）写入
 - **允许手法**：
   - 根据新模板文档替换或删除冲突命令
   - 使用条件编译适配不同模板
@@ -400,18 +400,10 @@ paperfit run scripts/extract_crossrefs.py main.tex --output data/crossrefs.json
 - **语义级改动**：**不允许**，只能改排版参数
 - **验收指标**：`compilation_success` = true
 
-## 3. 技能路由（taxonomy.skill_routing）
+## 3. 关于上游技能名
 
-| 技能 | 负责缺陷 |
-|---|---|
-| `space-util-fixer` | A1, A2, A3, A4 |
-| `float-optimizer` | B1, B3, B4 |
-| `fullwidth-fixers` | B2 |
-| `consistency-polisher` | C1, C2, C3 |
-| `overflow-repair` | D1, D2, D3 |
-| `template-migrator` | E1, E2, E3 |
-| `semantic-micro-tuning` | A1, A2, A3, E2 |
-
+本目录**就是**本插件的修复手册：18 类缺陷的允许手法、禁止手法、阈值与验收指标都在这里。
+早期版本把每类缺陷指向 PaperFit 的 7 个技能名（`space-util-fixer` 等），但那些技能从未随本插件注册；0.2.1 起不再指向它们，模型只需读本目录与 `latex-vto-loop`。
 ## 4. 使用顺序
 
 1. `vto_inspect` 拿页图 + checklist（checklist 里 `thresholds` 就是本目录的阈值）。

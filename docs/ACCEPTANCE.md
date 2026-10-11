@@ -357,7 +357,7 @@ node --input-type=module -e $code
 }
 ```
 
-> 结论口径：**不需要**单独安装 Poppler（MiKTeX 自带）；**不需要** Perl/latexmk。任何外部件缺失时，工具返回 `status:'skipped'` + 可执行的 `advice`，绝不抛异常 —— 这条贯穿全部 9 个工具。
+> 结论口径：**不需要**单独安装 Poppler（MiKTeX 自带）；Perl/latexmk 是**可选**（有则优先 latexmk，无则回落内置多趟驱动）。任何外部件缺失时，工具返回 `status:'skipped'` + 可执行的 `advice`，绝不抛异常 —— 这条贯穿全部 10 个工具。
 
 ---
 

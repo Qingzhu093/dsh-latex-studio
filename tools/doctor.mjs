@@ -43,7 +43,6 @@ const REQUIRED = [
   'lib/index.js',
   'lib/config.js',
   'lib/core/skillpack.js',
-  'lib/core/voidetect.js',
   'lib/core/paths.js',
   'lib/core/compile.js',
   'lib/core/lint.js',
@@ -60,7 +59,6 @@ const REQUIRED = [
   'lib/tools/vto.js',
   'lib/data/vto_taxonomy.json',
   'lib/data/layout_rules.json',
-  'lib/data/diagnostic_report.template.md',
   'skills/latex-daily/SKILL.md',
   'skills/latex-vto-loop/SKILL.md',
   'skills/latex-fix-catalog/SKILL.md',
@@ -77,6 +75,7 @@ const EXPECTED_TOOLS = [
   'vto_fix',
   'vto_verify',
   'vto_report',
+  'vto_rollback',
 ]
 
 const ok = (name, detail = '') => ({ name, status: 'ok', detail })

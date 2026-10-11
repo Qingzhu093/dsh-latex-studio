@@ -47,7 +47,7 @@
 | **直接 vendor 规则数据** | VTO 分类法/布局规则/写作规则是真正的领域知识，重造没有意义 |
 | **一个插件，不拆包** | 官方指南明确"不要预防性拆分，只有角色需要独立演进时才分包" |
 | **不引入 Tectonic** | 用户明确否决：会提高系统复杂度 |
-| **不依赖 latexmk** | 本机 latexmk 需要 Perl，不可用（实测） |
+| **latexmk 优先，内置驱动兜底** | 有 Perl 就用 latexmk（依赖追踪更准）；没有则内置多趟驱动，结果结构一致 |
 
 ---
 
@@ -108,7 +108,6 @@ dsh-latex-studio/
 │   ├── core/                   ← 零 DSH 依赖
 │   │   ├── paths.js            路径守卫的**唯一实现**（工作区相对 + 容器性判定）
 │   │   ├── rules.js            FORBIDDEN 规则表 + extractProtected（policy/guard/lint 共用）
-│   │   ├── voidetect.js        页图机检：A5 列空洞 + 页级度量（PaperFit detect_column_void 移植）
 │   │   ├── env.js              工具链探测（含 MiKTeX 目录回退）
 │   │   ├── compile.js          编译驱动：latexmk（可用时优先）/ 内置多趟 + makeindex
 │   │   ├── lint.js             静态规则 + chktex 三态
@@ -137,7 +136,6 @@ dsh-latex-studio/
 │   ├── docs.test.mjs           文档可追溯性守卫（字段数/布局名/模块地图/UTF-8）
 │   ├── daily.test.mjs          A 线
 │   ├── vto.test.mjs            B 线
-│   ├── voidetect.test.mjs      机检：PNG 解码 / Otsu / 投影 / 空洞分段 / 真实页图行高
 │   ├── skillpack.test.mjs      技能自注册（解析 / 注册形状 / 缺技能服务时的降级）
 │   ├── vendored-specs.test.mjs 上游规范树的来源哈希与防漂移
 │   ├── tools.test.mjs          doctor / install 的行为守卫
@@ -323,7 +321,7 @@ vto_report   → 写 reports/round-<n>.{md,json}
 | **MiKTeX** | **必需** | 提供 pdflatex/xelatex/lualatex/bibtex/biber |
 | **Poppler**（`pdftoppm`/`pdfinfo`） | 随 MiKTeX 自带 | `D:\MiKTeX\miktex\bin\x64\` |
 | **Ghostscript**（`mgs.exe` 9.25） | 随 MiKTeX 自带 | 同上 |
-| **Perl** | **不需要** | 所以不用 latexmk |
+| **Perl** | 可选 | 有则 latexmk 可用（`.fls` 依赖追踪）；没有则内置多趟驱动 |
 | **MinerU 插件**（`dsh-pdf-mineru`） | 可选 | 只在要结构化解析 PDF 时用（会上传） |
 | **任何 npm 运行时依赖** | **无** | `dependencies: {}` |
 
@@ -647,7 +645,7 @@ console.log('sync:', !(res&&res.then), '| registered:', JSON.stringify(res.regis
 | `dsh --version` 显示 0.1.5-rc.1 | PATH 上是旧全局安装 | 用 `D:\DshDesktop\resources\runtime\cli\bin\dsh.cmd` |
 | `--profile desktop --dump-config` → exit 1 | Electron 独占管理该 profile | 改用 `plugin list --profile desktop`，或看应用内设置页 |
 | `npm install` 挂死 >300s | `~/.npmrc` 配了失效代理 `127.0.0.1:31180/31181` | `npm <cmd> --userconfig <空文件>` |
-| `latexmk` 报找不到 perl | 本机无 Perl | 插件不使用 latexmk（`latexCommand='latexmk'` 会被忽略并给 advice） |
+| `latexmk` 报找不到 perl | 缺 Perl 运行时 | 装 Strawberry Perl 或把 Git 的 usr/bin 加入 PATH；否则自动回落内置驱动并给 advice |
 | MiKTeX 启动器 exit 0xC0000135/0xC0000139 | 版本混装 / 残留 lock | 清 `D:\MiKTeX\miktex\lock\package-manager.lock` → 重装基础包 → `miktex packages update` |
 | 中文/空格路径下测试失败 | Node 路径正则曾排除空格 | 已修；新增正则应覆盖含空格与 CJK 的工作区 |
 | PowerShell 输出中文乱码 | 控制台编码，非文件损坏 | 用 `js-yaml`/Node 读取校验，别信 `Get-Content` 显示 |
@@ -769,7 +767,7 @@ console.log('sync:', !(res&&res.then), '| registered:', JSON.stringify(res.regis
 | A10 | **`aux` → `auxfiles` 全局一致** | `SUBDIRS` 曾建一个空的保留名目录 `aux/`，而编译器写 `auxfiles/`；SKILL.md 还把 `aux/` 告诉了模型 | `state.js`、SKILL |
 | A11 | **测试"假绿"通道封堵** | `daily.test.mjs` 的 stub 导入失败会静默 skip 掉 8 条工具测试，全套仍报 ALL GREEN；现在有一条测试专门让该状态变红 | `test/daily.test.mjs` |
 | A12 | **新增文档可追溯性测试** | 本项目最贵的故障是文档与代码漂移（字段数、`aux/`、模块地图），不再靠手工发现 | 新增 `test/docs.test.mjs` |
-| A13 | **移植 PaperFit 的 A5 机检**（`lib/core/voidetect.js`） | 上游有 `detect_column_void.py`，本插件此前**完全没有**机检，模型只拿到页图和"该看什么"。本机无 cv2（只有 numpy/PIL），且 `dependencies:{}` 是硬不变量，故改自解 PNG（Node zlib）行为等价重写 | 新增 `lib/core/voidetect.js` + `test/voidetect.test.mjs` |
+| A13 | **移植 PaperFit 的 A5 机检（0.2.1 已删除）** | 该机检只覆盖 18 类中的 1 类，且页尾留白指标量的是「最后墨迹到纸边」的距离——实测写满页与近空白页同为 0.1718（页码是页脚最低墨迹）。删除后流程不变：判据本来就是页图与 checklist。 |
 | A14 | **`vto_inspect` 输出 `machineSignals`** | PaperFit 的 `layout-detective-agent` 要求把机检 `a5_candidates` 与页图结论**合并**；机检只产候选，判据仍是页图 | `lib/tools/vto.js` |
 | A15 | **checklist 补上 `layout_rules` 数值阈值** | 上游阈值在 `config/layout_rules.yaml`；移植版此前大部分缺陷 `thresholds: null`，模型不知道"多少算缺陷" | `buildChecklist` + `layoutRules` 字段 |
 
@@ -801,4 +799,4 @@ console.log('sync:', !(res&&res.then), '| registered:', JSON.stringify(res.regis
 | B8 | **junction/symlink 写入穿透** | 路径守卫是词法的，`realpath` 复检可堵 |
 | B9 | **`extract_crossrefs` 等价性核对** + `orphan_refs`/`orphan_labels` | `layout-detective-agent.md` 第零步要求；原版输出含悬空引用与未被引用的标签 |
 | B10 | ✅ **0.2.0 已处理** | `_meta.json` 删除、provenance 移入 `THIRD_PARTY_NOTICES.md`；其余 4 份 JSON 已接上消费者（templates→模板解析、content_boundaries→guard 章节下限、writing_rules→语义微调上限、agent_roles→类别路由与团队角色） |
-| B11 | **`INTERFACES.md` 重建** | 重复 §13、缺 `paths.js`/`voidetect.js`、`checkPolicy` 三参未记、多项未文档化导出 |
+| B11 | **`INTERFACES.md` 重建** | 重复 §13、缺 `paths.js`、`checkPolicy` 三参未记、多项未文档化导出 |

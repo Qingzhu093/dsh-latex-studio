@@ -149,7 +149,7 @@ test('apply: registers the whole skill pack through ctx.skills (no installer)', 
   const { ctx, tools } = makeCtx({ skills: service })
   const result = apply(ctx, Config({}))
 
-  assert.equal(tools.length, 9, 'the 9 tools must still register')
+  assert.equal(tools.length, 10, 'the 10 tools must still register')
   assert.equal(result.skills.delivered, true)
   assert.deepEqual(result.skills.problems, [])
   assert.equal(result.skills.registered.length, 3)
@@ -172,7 +172,7 @@ test('apply: a host with no skills service still gets all 9 tools', () => {
   // and a PENDING plugin registers nothing at all.
   const { ctx, tools } = makeCtx({ skills: undefined })
   const result = apply(ctx, Config({}))
-  assert.equal(tools.length, 9)
+  assert.equal(tools.length, 10)
   assert.equal(result.skills.delivered, false)
   assert.deepEqual(result.skills.registered, [])
   assert.deepEqual(result.failed, [])

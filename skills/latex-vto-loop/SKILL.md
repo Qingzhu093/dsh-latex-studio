@@ -12,7 +12,7 @@ description: LaTeX 论文的 VTO（视觉排版优化）循环：用「编译 �
 | 事实 | 值 |
 |---|---|
 | MiKTeX | `D:\MiKTeX\miktex\bin\x64`（同时提供 pdflatex/xelatex/lualatex/biber/bibtex/makeindex/chktex） |
-| `latexmk` | **不可用**（需 Perl）。用 `latex_build` 的自研多趟驱动，不要自己拼 latexmk |
+| 编译驱动 | 优先 `latexmk`（需 Perl；Git 自带的 perl 也会被探测），不可用则内置多趟驱动。用 `latex_build`，不要自己拼命令行 |
 | 页图后端 | ① `pdftoppm`（Poppler 24.04，随 MiKTeX）② `mgs.exe`（MiKTeX 自带 GPL Ghostscript 9.25）③ `mineru-page`（`read_pdf({view:'page'})`；本机 pdfjs 报错，通常不可用） |
 | DSH 进程 PATH | **通常不含 MiKTeX bin**。因此渲染/编译走绝对路径探测（render.js 已内置 `D:\MiKTeX\miktex\bin\x64` 兜底） |
 | Windows + Poppler | 必须**绝对路径 + `--` 分隔**，否则 I/O Error |

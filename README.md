@@ -125,12 +125,35 @@ if (service?.register) registerSkillPack(service, loadSkillPack().skills)
 > **npm 包自己的 `skills/` 不在其中。** 本项目此前就是这样：3 个 `latex-*` 技能随包发布很久，
 > 却一次都没被任何会话发现过。DSH 是围绕插件设计的，插件既然已经装载，就没有理由再绕一圈做文件发现。
 >
-> `skills` 是**可选**依赖（`ctx.get` 而不是 `inject`）：组合里没有技能服务时，9 个工具照常可用，
+> `skills` 是**可选**依赖（`ctx.get` 而不是 `inject`）：组合里没有技能服务时，10 个工具照常可用，
 > 而不是让插件永远 PENDING——PENDING 的插件连一个工具都注册不了。
 
 **不用插件时怎么读技能**：直接打开 `skills/<名字>/SKILL.md` 即可（例如在编辑器或 CI 里）。
 0.2.0 删除了 `tools/install-skills.mjs`：它是为「技能不进上下文」那个已经修好的问题写的兜底，而把同一批技能同时注册又放进发现根，只会互相遮蔽。
 
+
+### 2.6 环境要求与自助安装（发布版必读）
+
+**硬依赖只有一个：MiKTeX。** 它同时提供引擎、`bibtex`/`biber`/`makeindex`、页图后端（Poppler `pdftoppm`/`pdfinfo`、Ghostscript `mgs.exe`）。其余全部可选，缺了就降级，绝不抛异常。
+
+模型先跑 `latex_doctor`：它逐项报出「已装 / 缺失 + 安装命令」，`advice[]` 里就是可执行命令。对照表：
+
+| 组件 | 必需性 | 用途 | 缺失后果 | 安装（Windows） |
+|---|---|---|---|---|
+| MiKTeX（`pdflatex`/`xelatex`/`lualatex`、`bibtex`、`biber`、`makeindex`、`chktex`、`pdftoppm`/`pdfinfo`、`mgs.exe`） | **必需** | 编译、参考文献、页图 | A 线除 `latex_lint` 外全部 `skipped` | `winget install MiKTeX.MiKTeX` |
+| Perl + `latexmk` | 可选（推荐） | `.fls` 依赖追踪、正确重跑 | 自动回落内置多趟驱动（结果结构一致，只是没有依赖追踪） | `winget install StrawberryPerl.StrawberryPerl`；或使用 Git 自带的 `<Git>\usr\bin\perl.exe`（探测会自动找到） |
+| `chktex` | 可选 | 静态检查的外部通道 | `latex_lint` 少一路信号 | `mpm --install=chktex` |
+| 缺宏包 | 按需 | 编译通过 | `latex_build` 报 `File ... not found` | `latex_build` 默认带 `--enable-installer` 自动补装；或 `mpm --install=<pkg>` |
+| MinerU / 宿主 `read_pdf` | 可选 | 结构化解析（**可能上传**） | `vto_inspect({parse:true})` 在 `notes` 里说明 | 安装 DSH 的 `dsh-pdf-mineru` 插件 |
+
+**自助安装流程**（模型照做即可，不需要用户手动）：
+
+1. `latex_doctor({})` → 读 `advice[]`；
+2. 对每条缺失项执行它给出的命令（`winget install …` / `mpm --install=…`）；
+3. 再跑 `latex_doctor({ refresh: true })` 确认变为 `OK`；
+4. 仍然缺失的项**如实告诉用户**，不要假装编译通过。
+
+> MiKTeX 首次编译会慢：`--enable-installer` 需要联网按需下载宏包。
 ## 3. 两套命令体系
 
 ### 3.1 怎么用（两个真实场景）
@@ -336,7 +359,7 @@ npm test                           # 判定标准：0 failed 且 0 skipped（数
 
 ### 已知限制
 
-- **latexmk 不可用**（需要 Perl），插件不依赖它；`latexCommand: 'latexmk'` 会被忽略并给出 advice。
+- **latexmk 需要 Perl**：装了 Perl 就优先用它（`.fls` 依赖追踪），没装则自动回落内置多趟驱动；`latex_doctor` 报出实际状态与安装命令。
 - 本机 MinerU `read_pdf({view:'page'})` 失败；本地后端已足够，MinerU 仅作兜底/结构化解析（会上传）。
 - C2「图片分辨率/风格不一致」只能诊断，自动重绘不在范围内（需人工替换图片）。
 - 以 Windows + MiKTeX 为第一目标平台；路径含空格与中文已覆盖测试。

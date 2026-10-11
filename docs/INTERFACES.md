@@ -10,7 +10,7 @@
 |---|---|
 | MiKTeX | 已安装于 `D:\MiKTeX`，bin = `D:\MiKTeX\miktex\bin\x64`（已在用户 PATH） |
 | 引擎 | `pdflatex.exe` / `xelatex.exe` / `lualatex.exe` / `biber.exe`(2.21) / `bibtex.exe` / `makeindex.exe` / `mpm.exe` / `initexmf.exe` / **`miktex-chktex.exe`** 全部可用 |
-| **`latexmk` 不可用** | MiKTeX 的 latexmk 是脚本，需要 **Perl**，本机没有 → **禁止依赖 latexmk**。必须自己写多趟编译驱动 |
+| **编译驱动** | 默认优先 `latexmk`（需要 **Perl**：Strawberry，或 Git for Windows 自带的 `usr/bin/perl`），不可用时自动回落内置多趟驱动。`latex_build` 结果的 `via` 标明实际走了哪条 |
 | **Poppler** | ✅ **可用（daily-core 实测更正）**：`D:\MiKTeX\miktex\bin\x64\pdftoppm.exe` / `pdfinfo.exe`（Poppler 24.04.0）**随 MiKTeX 25.12 一起装了**。`Get-Command pdftoppm` 查不到只是因为 DSH 进程 PATH 不含 MiKTeX bin → **resolveTool 必须显式追加 `D:\MiKTeX\miktex\bin\x64`**。`pdftoppm -png -r 100 -f 1 -l 1 -- <abs pdf> <out>` 退出码 0，产出 55253 字节 PNG。**注意：Windows 下必须传绝对路径，Poppler 不认正斜杠相对路径** |
 | scoop 的 poppler | 空壳目录 `D:\scoop_all\scoop\apps\poppler`，可忽略 |
 | **MiKTeX Ghostscript** | ✅ **可用（P0 实测）**：`D:\MiKTeX\miktex\bin\x64\mgs.exe`（GPL Ghostscript 9.25）；已把 `latex-demo/main.pdf` 第 1 页渲染成 18454 字节 PNG，退出码 0。命令：`mgs.exe -dNOPAUSE -dBATCH -sDEVICE=png16m -r<dpi> -dFirstPage=N -dLastPage=N -sOutputFile=<out.png> <in.pdf>`。**这是零额外安装的本地页图后端** |
