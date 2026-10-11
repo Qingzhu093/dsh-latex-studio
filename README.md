@@ -4,8 +4,8 @@
 > 两套命令体系：**A 线 日常编译**（`latex_doctor` / `latex_build` / `latex_lint` / `bib_tool`）与 **B 线 VTO 全流程**（`vto_start` / `vto_inspect` / `vto_fix` / `vto_verify` / `vto_report`）。
 > 方法学参考 PaperFit（MIT，[arXiv:2605.10341](https://arxiv.org/abs/2605.10341)），要点见 [docs/paperfit-notes.md](docs/paperfit-notes.md)；模块契约见 [docs/INTERFACES.md](docs/INTERFACES.md)；验收见 [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)。
 >
-> 🔧 **维护 / 交接从这里开始：[docs/HANDOFF.md](docs/HANDOFF.md)** —— 完整架构、工具面、配置契约、维护配方、已知问题。
-> 🧭 **设计依据与取舍：[docs/DESIGN-REVIEW.md](docs/DESIGN-REVIEW.md)** —— 为什么保留视觉通道、机检与页图如何分工。
+> 🔧 **维护 / 开发从这里开始：[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** —— 架构、工具面、配置契约、维护配方、排错、已知问题，以及历史记录。
+> 🧭 **设计依据与取舍**：见 DEVELOPMENT.md §7（关键设计决策与**被否决的方案**）。
 >
 > ℹ️ **技能由插件自己注册**，装完插件即可用，不需要额外步骤（见 §2.5）。`skills/` 里只有本插件自己的 3 个 `latex-*`；vendor 自 PaperFit 的上游规范自 0.2.0 起只作参考文本（`docs/upstream/paperfit/`），不再注册、不随包发布。
 
@@ -315,7 +315,7 @@ dsh-latex-studio/
 │   └── data/               # 在用的 PaperFit 数据（MIT）：分类法 / 阈值 / 报告模板
 ├── skills/                 # 操作守则（latex-daily / latex-vto-loop / latex-fix-catalog）
 ├── test/                   # node:test 单测；run-all.mjs 聚合汇总
-├── docs/                   # 【不随包发布】HANDOFF / INTERFACES / ACCEPTANCE / paperfit-notes / P0-PROBES
+├── docs/                   # 【不随包发布】DEVELOPMENT / INTERFACES / ACCEPTANCE / 索引 + upstream 参考
 │   └── upstream/paperfit/  # 【只读参考】上游 agent/命令原文 + MANIFEST（逐文件 sha256）
 ├── tools/                  # 辅助脚本（doctor / install / 页图体检 / 上游参考校验）
 ├── cordis.patch.yml        # bundle 配置层（开关默认值）

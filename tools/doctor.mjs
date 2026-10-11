@@ -359,7 +359,7 @@ async function main() {
     console.log(failed.length === 0
       ? (warned.length === 0 ? 'verdict: HEALTHY' : 'verdict: HEALTHY with ' + warned.length + ' warning(s)')
       : 'verdict: ' + failed.length + ' FAILURE(S)')
-    if (failed.length > 0) console.log('see docs/HANDOFF.md §14 for the troubleshooting path')
+    if (failed.length > 0) console.log('see docs/DEVELOPMENT.md §12 for the troubleshooting path')
   }
   return failed.length === 0 ? 0 : 1
 }

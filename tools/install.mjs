@@ -2,7 +2,7 @@
 /**
  * One-command install/upgrade for this plugin.
  *
- * The manual procedure in docs/HANDOFF.md §11.2 was four steps long and easy to
+ * The manual procedure documented earlier was four steps long and easy to
  * get half-right (pack, edit the profile manifest, copy the tree, remember to
  * verify). This script does the whole thing and then proves it worked, so
  * "installed" means "doctor says HEALTHY", not "I think I copied the files".

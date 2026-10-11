@@ -6,10 +6,7 @@
 |---|---|---|
 | [INTERFACES.md](./INTERFACES.md) | 模块契约、工具面、参数基准表 | 现行，改动需同步 |
 | [ACCEPTANCE.md](./ACCEPTANCE.md) | 可复现的验收命令与判据 | 现行 |
-| [HANDOFF.md](./HANDOFF.md) | 架构、维护配方、已知问题、历次修订 | 现行（含历史记录） |
-| [P0-PROBES.md](./P0-PROBES.md) | 立项时的环境探针证据（2026-10-10） | **历史**，结论可能已过期 |
-| [DESIGN-REVIEW.md](./DESIGN-REVIEW.md) | 设计取舍与目标设计（含被否决方案） | **历史**，读结论看 §1 |
-| [paperfit-notes.md](./paperfit-notes.md) | PaperFit 论文要点与资产映射 | **历史参考** |
+| [DEVELOPMENT.md](./DEVELOPMENT.md) | **维护者总入口**：架构、工具面、配置、环境、维护配方、排错、已知债，外加历史记录（原 HANDOFF/DESIGN-REVIEW/P0-PROBES 已合并于此） | 现行 |
 | [upstream/paperfit/](./upstream/paperfit/) | PaperFit 上游原文（MIT）+ `MANIFEST.json`（逐文件 sha256） | **只读参考**，不随包发布、不注册为技能 |
 
 约定：

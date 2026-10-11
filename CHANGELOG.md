@@ -44,8 +44,8 @@ confirmed by reproducing them first (see each item).
   and preferred it. All normative text now says: use latexmk when Perl is present,
   otherwise fall back to the built-in multi-pass driver.
 - `docs/HANDOFF.md`, `docs/ACCEPTANCE.md`, `lib/core/compile.js`, `lib/core/env.js`
-  and `lib/config.js` carried the same stale claim; `docs/P0-PROBES.md` now opens
-  with a dated supersession banner.
+  and `lib/config.js` carried the same stale claim (the supersession is recorded in
+  `docs/DEVELOPMENT.md` §13, which replaced the old probe report).
 
 ### Docs
 

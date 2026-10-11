@@ -56,7 +56,7 @@ test('doctor: --json emits a machine-readable report with the same verdict', { t
   }
   const tools = report.results.find((r) => r.name === 'tools')
   assert.equal(tools.status, 'ok')
-  assert.match(tools.detail, /9 tools registered/)
+  assert.match(tools.detail, /10 tools registered/)
   const skills = report.results.find((r) => r.name === 'skills')
   assert.equal(skills.status, 'ok')
   assert.match(skills.detail, /3 skills registered/)

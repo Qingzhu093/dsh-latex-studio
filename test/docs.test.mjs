@@ -30,11 +30,11 @@ const read = (rel) => readFileSync(join(root, rel), 'utf8')
 const fieldCount = Object.keys(DEFAULTS).length
 
 test('docs: the documented config-field count matches the code', () => {
-  const handoff = read('docs/HANDOFF.md')
+  const handoff = read('docs/DEVELOPMENT.md')
   const claimed = [...handoff.matchAll(/(\d+)\s*个配置字段/g)].map((m) => Number(m[1]))
-  assert.ok(claimed.length > 0, 'HANDOFF.md no longer states a config field count; update this guard')
+  assert.ok(claimed.length > 0, 'DEVELOPMENT.md no longer states a config field count; update this guard')
   for (const count of claimed) {
-    assert.equal(count, fieldCount, 'HANDOFF.md claims ' + count + ' config fields but lib/config.js has ' + fieldCount)
+    assert.equal(count, fieldCount, 'DEVELOPMENT.md claims ' + count + ' config fields but lib/config.js has ' + fieldCount)
   }
   // The README's config table must list exactly the declared fields.
   const readme = read('README.md')
@@ -50,7 +50,7 @@ test('docs: no shipped doc asks the model to use a reserved `aux/` work subdir',
   // The compiler writes to `auxfiles`. `aux` is a reserved DOS device name.
   assert.ok(SUBDIRS.includes('auxfiles'), 'the compiler aux dir must be auxfiles')
   assert.ok(!SUBDIRS.includes('aux'), 'SUBDIRS must not create `aux`')
-  const docs = ['README.md', 'docs/HANDOFF.md', 'docs/INTERFACES.md', 'skills/latex-daily/SKILL.md', 'skills/latex-vto-loop/SKILL.md', 'skills/latex-fix-catalog/SKILL.md']
+  const docs = ['README.md', 'docs/DEVELOPMENT.md', 'docs/INTERFACES.md', 'skills/latex-daily/SKILL.md', 'skills/latex-vto-loop/SKILL.md', 'skills/latex-fix-catalog/SKILL.md']
   for (const rel of docs) {
     let text
     try {
@@ -71,7 +71,7 @@ test('docs: no shipped doc asks the model to use a reserved `aux/` work subdir',
 })
 
 test('docs: the handoff does not teach the removed 3-way config sync as current practice', () => {
-  const handoff = read('docs/HANDOFF.md')
+  const handoff = read('docs/DEVELOPMENT.md')
   // Describing the retired rule is fine (and useful history); INSTRUCTING the
   // reader to keep three copies in sync is what must never come back. Match per
   // line, skip lines that explicitly mark the rule as retired, and require an
@@ -87,7 +87,7 @@ test('docs: the handoff does not teach the removed 3-way config sync as current 
       }
     }
   }
-  assert.deepEqual(offenders, [], 'HANDOFF.md still instructs keeping three copies in sync:\n' + offenders.join('\n'))
+  assert.deepEqual(offenders, [], 'DEVELOPMENT.md still instructs keeping three copies in sync:\n' + offenders.join('\n'))
 })
 
 test('docs: every tool named in the README walkthrough actually exists', async () => {
@@ -199,13 +199,13 @@ test('docs: every shipped text file is valid UTF-8 with no replacement character
   assert.deepEqual(problems, [], 'text files must stay valid UTF-8:\n' + problems.join('\n'))
 })
 
-test('docs: the referenced core modules exist (no phantom module in the map)', () => {  const handoff = read('docs/HANDOFF.md')
+test('docs: the referenced core modules exist (no phantom module in the map)', () => {  const handoff = read('docs/DEVELOPMENT.md')
   const listed = [...handoff.matchAll(/lib\/core\/([a-z]+)\.js/g)].map((m) => m[1])
   const unique = [...new Set(listed)]
-  assert.ok(unique.length > 0, 'the module map disappeared from HANDOFF.md')
+  assert.ok(unique.length > 0, 'the module map disappeared from DEVELOPMENT.md')
   for (const name of unique) {
-    assert.doesNotThrow(() => read('lib/core/' + name + '.js'), 'HANDOFF.md references lib/core/' + name + '.js which does not exist')
+    assert.doesNotThrow(() => read('lib/core/' + name + '.js'), 'DEVELOPMENT.md references lib/core/' + name + '.js which does not exist')
   }
   // ...and the newest module must actually be documented, not silently omitted.
-  assert.ok(unique.includes('paths'), 'HANDOFF.md omits lib/core/paths.js from its module map')
+  assert.ok(unique.includes('paths'), 'DEVELOPMENT.md omits lib/core/paths.js from its module map')
 })
