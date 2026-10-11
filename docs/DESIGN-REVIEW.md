@@ -203,7 +203,7 @@ bundle patch 不再携带 `config`（消灭"覆盖一个字段丢掉其余 19 �
 | B6 | **`latex_build.clean` 会 `rmSync(recursive)`** | `workDir` 已加固，但 `clean` 仍是无二次确认的递归删除 |
 | B7 | **junction/symlink 写入穿透** | 路径守卫是词法的，`realpath` 复检可堵 |
 | B8 | **`extract_crossrefs` 等价性核对** + `orphan_refs`/`orphan_labels` | `layout-detective-agent.md` 第零步要求；原版输出含悬空引用与未被引用的标签 |
-| B9 | **`lib/data/` 5 个无人读取的 JSON + 已消失的生成器输入** | 要么接上用途，要么移出发布集；`_meta.json` 还硬编码了绝对路径 |
+| B9 | ✅ **0.2.0 已处理** | `_meta.json` 删除；其余 4 份 JSON 接上消费者（见 HANDOFF §17.3） |
 | B10 | **`INTERFACES.md` 重建** | 重复 §13、缺 `paths.js`/`voidetect.js`、`checkPolicy` 三参未记、多项未文档化导出 |
 
 ---

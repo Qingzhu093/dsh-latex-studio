@@ -7,9 +7,9 @@ Their code/config is used under the MIT License; the original license text is re
 Vendored: `config/vto_taxonomy.yaml`, `config/layout_rules.yaml`, `config/content_boundaries.yaml`,
 `config/templates.yaml`, `config/writing_rules.yaml`, `config/agent_roles.yaml`,
 `config/diagnostic_report.template.md`
-(converted to JSON under `lib/data/` by `tools/convert-yaml.mjs`, a **one-time maintainer step** —
-that YAML is vendored here as the derived JSON, and the converter needs `js-yaml` plus the upstream
-`config/` directory, neither of which ships with this package).
+(converted **once** to JSON under `lib/data/` while porting; the one-off converter and the upstream
+YAML are no longer part of this repository — the JSON under `lib/data/` is the only form of this data
+here, and the provenance above plus `docs/upstream/paperfit/MANIFEST.json` is the record of origin).
 
 Re-implemented (not copied): `lib/core/voidetect.js` is a behaviour-equivalent port of
 `scripts/detect_column_void.py` (page-image column-void detection, algorithm reference lines

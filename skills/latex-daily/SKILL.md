@@ -12,9 +12,9 @@ description: 日常 LaTeX 编译门控与参考文献审计（A 线）。当任�
 | 事实 | 说明 |
 |---|---|
 | MiKTeX 是**唯一必需件** | 装在 `D:\MiKTeX`；同时自带引擎、biber/bibtex、chktex、**pdftoppm/pdfinfo（Poppler 24.04）**、**mgs.exe（Ghostscript 9.25）** |
-| **latexmk 不可用** | MiKTeX 的 latexmk 是 Perl 脚本，本机无 Perl。`latex_build` 自己做多趟驱动，**不要**尝试调 latexmk |
+| **编译驱动** | 默认优先 `latexmk`（需 Perl；Git 自带的 perl 也会被探测）；不可用时自动回落内置多趟驱动。`latex_build` 的返回值里 `via` 说明实际走了哪条 |
 | 页图通道 | ① poppler（MiKTeX 自带）② miktex-ghostscript（mgs）③ read_pdf（会上传，非必要不用） |
-| 路径 | 工具入参一律**工作区相对路径**；绝对路径与 `..` 会被拒绝。工作路径含空格与中文是正常的 |
+| 路径 | `dir`/`bib`/`tex`/`pdfPath` 按工作区解析，`entry` 相对 `dir`；绝对路径与 `..` 会被拒绝。工作路径含空格与中文是正常的 |
 
 先跑一次 `latex_doctor` 拿到真实环境，再动手。
 

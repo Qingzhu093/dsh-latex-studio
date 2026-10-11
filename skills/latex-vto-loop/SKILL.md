@@ -28,7 +28,7 @@ vto_verify  → verdict + checks{compile,render,contentIntegrity,pageBudget,poli
 vto_report  → 写 reports/round-N.{md,json}
 ```
 
-**所有路径参数都是工作区相对路径**（绝对路径与 `..` 会被拒绝）。工作目录默认 `<工程>/.latex-studio/`，布局 `{state.json,build/,auxfiles/,pages/,reports/,backups/rN/}`。辅助目录是 `auxfiles/` 而**不是** `aux/`：`aux` 是 Windows 保留设备名，会让复制/打包失败。
+**路径基准**：`dir`/`pdfPath`/`bib`/`tex` 按工作区解析；`entry`/`file`/`pdf` 相对 `dir`（工程目录）解析，例如 `vto_fix({dir:"paper", file:"main.tex"})`。绝对路径与 `..` 会被拒绝。工作目录默认 `<工程>/.latex-studio/`，布局 `{state.json,build/,auxfiles/,pages/,reports/,backups/rN/}`。辅助目录是 `auxfiles/` 而**不是** `aux/`：`aux` 是 Windows 保留设备名，会让复制/打包失败。
 
 ## 2. 一轮完整循环
 

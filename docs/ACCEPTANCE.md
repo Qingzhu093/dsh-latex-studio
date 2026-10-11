@@ -127,7 +127,7 @@ restored: {"status":"passed","pages":2}
 
 **实测**：完全一致；`broken` 的 `file` 指向副本内 `main.tex`、`line:46`、`message:"Undefined control sequence."`。
 
-**DSH 会话内等价调用**：`latex_build`（工作区相对路径），例如 `latex_build({ dir: 'latex-demo', entry: 'main.tex' })`。
+**DSH 会话内等价调用**：`latex_build({ dir: 'latex-demo', entry: 'main.tex' })`——`dir` 是工作区相对路径，`entry` 相对 `dir`。
 
 ---
 
@@ -142,7 +142,7 @@ restored: {"status":"passed","pages":2}
 // 第 1 步：编译，记下返回的 pdfPath（本工作区默认 workDir 下为 latex-demo/.latex-studio/build/main.pdf）
 latex_build({ dir: "latex-demo", entry: "main.tex" })
 
-// 第 2 步：工具内真渲染第 1 页（pdfPath 是工作区相对路径）
+// 第 2 步：工具内真渲染第 1 页（latex_doctor.pdfPath 是工作区相对路径）
 latex_doctor({ verifyPdfRead: true, pdfPath: "latex-demo/.latex-studio/build/main.pdf" })
 ```
 

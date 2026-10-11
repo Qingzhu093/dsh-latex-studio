@@ -134,7 +134,7 @@ export function registerDaily(ctx, config)   // latex_doctor, latex_build, latex
 export function registerVto(ctx, config)     // vto_start, vto_inspect, vto_fix, vto_verify, vto_report
 ```
 用 `defineTool` from `@deepseek-ai/dsh-tools`；`output.schema` 为 JSON Schema 片段；`output.render(args,value)` 返回 `ContentBlock[]`（文本或 `{type:'image',...}`）。
-工具入参一律**工作区相对路径**（拒绝绝对路径与 `..`）。
+工具入参按 **基准** 解析：`dir`/`bib`/`tex`/`pdfPath` 工作区相对；`entry`/`file`/`pdf` 相对 `dir`；`workDir` 是纯目录名。绝对路径、盘符、UNC 与 `..` 一律拒绝（`test/params.test.mjs` 强制）。
 
 **工作区根**（daily/vto 一致）：`exec.agent.session.header.cwd` → `ctx.get('fs').cwd` → `process.cwd()`（前两者优先；DSH 桌面端进程 cwd 未必是会话工作区）。
 

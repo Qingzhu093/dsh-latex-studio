@@ -147,7 +147,6 @@ dsh-latex-studio/
 │   ├── verify-pdf-read.mjs     页图通道体检（纯 Node，三态结论）
 │   ├── install-skills.mjs      兜底：把技能放进发现根（正常不需要）
 │   ├── vendor-paperfit-specs.mjs 可复现地 vendor 上游规范 + 来源哈希
-│   ├── convert-yaml.mjs        YAML → JSON（一次性维护脚本，不在发布集）
 │   └── _p0/                    【不在发布白名单】调研证据，有意不发布
 └── docs/
     ├── INTERFACES.md           对外契约（**已知滞后**，见第 17 节 G4）
@@ -231,7 +230,7 @@ vto_report   → 写 reports/round-<n>.{md,json}
 
 ### 4.3 全体工具共同遵守的约定
 
-1. **路径一律工作区相对**：绝对路径、`..` 逃逸一律拒绝（`INVALID_PATH`）。**注意**：宿主传入含正斜杠的 `cwd` 时曾误判，已修（用 `path.relative` 判包含性）。
+1. **路径按基准解析**：`dir`/`bib`/`tex`/`pdfPath` 工作区相对；`entry`/`file`/`pdf` 相对 `dir`（`resolveProjectPath` 收口）；绝对路径、盘符、UNC、`..` 一律拒绝（`INVALID_PATH`）。传错基准会给出「应传什么」的 advice。**注意**：宿主传入含正斜杠的 `cwd` 时曾误判，已修（用 `path.relative` 判包含性）。
 2. **缺外部件一律优雅降级**：返回 `status:"skipped"` + `reason` + `advice[]`，**绝不抛异常**。
 3. **`vto_fix` 默认不写盘**（`apply:false` 只给配方+diff+预检）。
 4. **presentCall / presentResult** 负责给 UI 卡片；工具返回结构化 JSON 供模型消费。
@@ -566,12 +565,12 @@ console.log('sync:', !(res&&res.then), '| registered:', JSON.stringify(res.regis
 真实宿主里也能设，但**没有任何代码读取**——用户以为配上了。这种字段应当删掉而不是保留。
 
 ### 12.3 改 VTO 规则 / 分类法
-- 数据在 `lib/data/*.json`。上游 YAML **不随包发布**（已转成 JSON），`tools/convert-yaml.mjs` 只在
-  初次移植时用过一次，需要 `js-yaml` + 上游 `config/` 目录，**不是**可重跑的构建步骤。
+- 数据在 `lib/data/*.json`（**唯一形态**）：上游 YAML 与当年用过一次的转换脚本都**已不在仓库**，不要去找、也不要重跑转换。
+- 每份数据都必须有代码消费者，否则移出发布集（0.2.0 移除了 `_meta.json`，其余 4 份接上了用途，见 `test/` 与 HANDOFF §17.3）。
 - 改上游规范文本请用 `node tools/vendor-paperfit-specs.mjs --from <paperfit-cli 目录>`，
   它会重写 `docs/upstream/paperfit/MANIFEST.json`（含逐文件来源 sha256）；`--check` 在漂移时失败。
 - 改动分类法后**同步** `skills/latex-fix-catalog/SKILL.md`（修复手法目录，既是文档也是路由表）。
-- `lib/data/_meta.json` 记录来源与版本，改数据请更新它。
+- 数据来源与许可记录在 `THIRD_PARTY_NOTICES.md`（**没有** `_meta.json` 了：它记录的是绝对路径，不可移植）。
 
 ### 12.3b 技能：由插件自注册（改了 `skills/` 不需要额外步骤）
 `apply()` 里 `ctx.get('skills')` → `registerSkillPack()`，把 `skills/` 全部注册进宿主。
@@ -737,7 +736,7 @@ node tools/install-skills.mjs --uninstall  # 撤掉兜底安装
 2. `apply` **必须同步**注册（不是 E5 的原因，但同步本来就更稳；见第 15 节）。
 3. 配置字段 **两处同步**（`config.js` 的 `DEFAULTS` ↔ `index.js` 的 schema）；
    `cordis.patch.yml` **不得**再出现 `config:` 块（`test/config.test.mjs` 强制）。
-4. 路径参数 **一律工作区相对**，拒绝绝对路径 / 盘符 / UNC / `..`；**只有 `lib/core/paths.js` 一份实现**。
+4. 路径参数按 **基准** 解析（工作区 / 工程 / 目录名），拒绝绝对路径 / 盘符 / UNC / `..`；词法守卫只有 `lib/core/paths.js` 一份实现，工程相对语义由 `lib/tools/vto.js` 的 `resolveProjectPath` 收口，`test/params.test.mjs` 强制每类参数都声明基准。
 5. 缺外部件 **返回 skipped + advice**，不抛异常。
 6. `vto_fix` **默认不写盘**；写盘必须 备份 → 写入 → guard 校验 → 失败回滚。
 7. 内容保全 **优先于** 视觉质量。
@@ -807,5 +806,5 @@ node tools/install-skills.mjs --uninstall  # 撤掉兜底安装
 | B7 | **`latex_build.clean` 会 `rmSync(recursive)`** | `workDir` 已加固，但 `clean` 仍是无二次确认的递归删除；建议要求显式 `yes` 或只删已知子目录 |
 | B8 | **junction/symlink 写入穿透** | 路径守卫是词法的，`realpath` 复检可堵 |
 | B9 | **`extract_crossrefs` 等价性核对** + `orphan_refs`/`orphan_labels` | `layout-detective-agent.md` 第零步要求；原版输出含悬空引用与未被引用的标签 |
-| B10 | **`lib/data/` 5 个无人读取的 JSON + 已消失的生成器输入** | 要么接上用途，要么移出发布集；`_meta.json` 还硬编码了绝对路径 |
+| B10 | ✅ **0.2.0 已处理** | `_meta.json` 删除、provenance 移入 `THIRD_PARTY_NOTICES.md`；其余 4 份 JSON 已接上消费者（templates→模板解析、content_boundaries→guard 章节下限、writing_rules→语义微调上限、agent_roles→类别路由与团队角色） |
 | B11 | **`INTERFACES.md` 重建** | 重复 §13、缺 `paths.js`/`voidetect.js`、`checkPolicy` 三参未记、多项未文档化导出 |

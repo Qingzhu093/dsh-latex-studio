@@ -163,7 +163,7 @@ node tools/install-skills.mjs --uninstall  # 撤掉兜底安装
 模型：vto_start({dir:"paper", pageBudget:9})     ← 冻结内容基线 + 记录当前页数
       vto_inspect({dir:"paper", pages:"all"})    ← 出页图 + 机检候选 + 带阈值的 checklist
       …逐页看图，按 checklist 的 id 记录缺陷…
-      vto_fix({dir:"paper", file:"paper/main.tex", find:"…", replace:"…"})   ← apply 默认 false：只看 diff
+      vto_fix({dir:"paper", file:"main.tex", find:"…", replace:"…"})        ← apply 默认 false：只看 diff
       vto_fix({…, apply:true})                   ← 备份 → 写 → guard 校验 → 失败自动回滚
       vto_verify({dir:"paper"})                  ← 五项门禁 + verdict + regressions + rollbackTo
       vto_report({dir:"paper", verdict:"pass", changes:[…]})
@@ -194,7 +194,8 @@ node tools/install-skills.mjs --uninstall  # 撤掉兜底安装
 | `vto_verify` | 门禁复核：重新编译 + 重新渲染抽样页 + 内容保全 + 页数预算 + 策略检查，给出 `verdict`/`checks`/`regressions`/`rollbackTo` | `dir` `entry` `pdf` `pages` `pageBudget` `round` `dpi` |
 | `vto_report` | 写出本轮诊断报告（`.json` + `.md`，模板 vendored 自 PaperFit） | `dir` `round` `verdict` `changes` `remaining` `defectsBefore` `defectsAfter` `notes` |
 
-> 所有工具入参一律**工作区相对路径**；绝对路径与 `..` 会被拒绝。
+> **路径基准（0.2.0 起）**：`dir`、`bib`、`tex`、`latex_doctor.pdfPath` 按**会话工作区**解析；`entry`、`file`、`pdf` 按 **`dir` 指向的工程目录**解析（例如 `dir:"paper"` + `entry:"main.tex"`）；`workDir` 是纯目录名。绝对路径、盘符、UNC 与 `..` 一律拒绝。
+> 传错基准时工具会直接告诉你应传什么，而不是丢一个 `FILE_NOT_READABLE`（见 `test/params.test.mjs`）。
 > `vto_inspect` 默认每轮只内联 1 张页图（`attachImagesPerRound`）；其余页用返回里的
 > `pages[].call` 字符串直接照抄调用 `read_image`。想看完整页图就调大该值（或设 0 关掉图片通道）。
 
@@ -236,7 +237,8 @@ node tools/install-skills.mjs --uninstall  # 撤掉兜底安装
 | Node.js | 宿主自带 | `^22.19.0 || >=24.0.0`；DSH 桌面端 0.2.0-rc.2 自带 Node 24 |
 | npm 运行时依赖 | **无** | `dependencies: {}`；`@deepseek-ai/*` 只是 peer（且 `lib/core/*` 完全不 import 它们） |
 
-**不需要单独安装 Poppler**：MiKTeX 自带 `D:\MiKTeX\miktex\bin\x64\pdftoppm.exe`；即使没有 Poppler，还有 `mgs.exe`。**不需要安装 Perl/latexmk。**
+**不需要单独安装 Poppler**：MiKTeX 自带 `D:\MiKTeX\miktex\bin\x64\pdftoppm.exe`；即使没有 Poppler，还有 `mgs.exe`。
+**编译驱动**：默认优先 `latexmk`（需要 Perl；Git for Windows 自带的 `usr\bin\perl.exe` 也会被探测到），探测不到 Perl/latexmk 时自动回落到内置多趟驱动——**没有 Perl 也能用**，只是没有依赖追踪。安装 Perl：`winget install StrawberryPerl.StrawberryPerl`。
 
 一条命令体检页图通道（默认探测 `../latex-demo/main.pdf`）：
 
