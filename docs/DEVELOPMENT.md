@@ -58,8 +58,9 @@ dsh-latex-studio/
 ├── package.json          bundle manifest + peer/dev 契约 + files 白名单
 ├── cordis.patch.yml      只 insert 一行插件，**不携带 config**（见 §4.4）
 ├── lib/
-│   ├── index.js          插件入口：Config schema + 同步 apply()
-│   ├── config.js         DEFAULTS + normalizeConfig()
+│   ├── index.js          插件入口：Config schema（全字段 volatile）+ 同步 apply()
+│   ├── client.js         浏览器半：插件面板配置页（lazy-CJS 工厂，只 require react；见 §2.6）
+│   ├── config.js         DEFAULTS + normalizeField/normalizeConfig + liveConfig()
 │   ├── core/             零 DSH 依赖
 │   │   ├── paths.js        路径词法守卫的**唯一实现**
 │   │   ├── rules.js        FORBIDDEN 规则表 + extractProtected（policy/guard/lint 共用）
@@ -76,9 +77,11 @@ dsh-latex-studio/
 │   │   └── pdfread.js      uploadScope 隐私门 + read_pdf 桥
 │   ├── tools/            daily.js（A 线 4 个）· vto.js（B 线 6 个）
 │   └── data/             vto_taxonomy / layout_rules / templates / content_boundaries / writing_rules / agent_roles
+├── locale/               en.json / zh.json：插件页的标题与描述（meta.title / meta.description）
+├── icon.svg              插件卡片图标（package.json 的 icon）
 ├── skills/               latex-daily · latex-vto-loop · latex-fix-catalog（全部由插件自注册）
 ├── test/                 node:test；run-all.mjs 聚合
-├── tools/                install.mjs · doctor.mjs · verify-pdf-read.mjs · vendor-paperfit-specs.mjs
+├── tools/                install.mjs · doctor.mjs · build-preview.mjs · verify-pdf-read.mjs · vendor-paperfit-specs.mjs
 │   └── _p0/              立项期调研证据（**不在发布白名单**）
 └── docs/                 本文件 + INTERFACES + ACCEPTANCE + README(索引) + upstream/（只读参考，不发布）
 ```
@@ -137,6 +140,33 @@ vto_rollback 按 backups/rN/manifest.json **真正执行回滚**
 ├── reports/round-N.*   轮次报告（.md 由台账生成）与 round-N.record.json
 └── backups/rN/         修复前副本 + manifest.json（含 existed/hash/bytes）
 ```
+
+### 2.6 浏览器半：插件面板里的配置页
+
+`lib/client.js` 是这个插件的浏览器半（`package.json` 的 `dsh.client` + `exports["./client"]`）。它把 §4 的 17 个字段渲染成 6 张卡片，注册到插件页的**两个**位置：
+
+| slot | key | 用户在哪里看到它 |
+|---|---|---|
+| `plugins.bundle.config` | `dsh-latex-studio`（包名） | 点插件卡片后的「配置」区 |
+| `plugins.row.config` | `dsh-latex-studio#latex-studio` | 点组件行 `latex-studio` 后的配置页（键由插件管理器按 `bundle#rowId` 计算） |
+
+**为什么是手写文件、没有打包器**：客户端模块系统只按 `exports["./client"]` 服务一个产物，格式是 lazy-CJS 工厂（`window.__ModuleLoader__.load({id, factory})`），`factory(require)` 只能解析模块图里已经存在的模块；DSH 仓库里负责生成它的 `clientBundle` tsdown preset 不随包发布。所以这里是一个自包含的单文件工厂，**只 `require("react")`**：零构建步骤、零运行时依赖，与「不引入运行时依赖」这条不变量一致。`test/client.test.mjs` 用一套最小 React/DOM shim 真的把这个 bundle 跑起来。
+
+**为什么没有「保存」按钮**：字段全部是 `.volatile()`（§4.1），设置服务把 volatile 字段按 profile 条目 id 投影成表单，插件页拿到的 controller 与 `ctx.configForms.get('latex-studio')` 是同一个。写入走 `form.set / form.unset / form.mutate`：宿主校验**整份** Config → 写 profile patch → 原地替换 volatile 引用。于是
+
+- 不需要自建 RPC、不需要调 configEditor、不需要重启，也没有「草稿 / 已保存」两套状态；
+- 「恢复默认」= `unset`，语义就是「删掉本页写入的覆盖值、回到 schema 默认」；
+- 写入是 CAS 的（过期 revision 由宿主拒绝），页面把 revision 交给 controller 管理。
+
+**读取必须走 `liveConfig()`**：volatile 字段在 `apply` 里拿到的是**引用**，不是值。`liveConfig(ctx, entryConfig)` 返回的对象每次属性访问都重读 `ctx.fiber?.config`，所以工具永远看到最新值，保存后立刻生效。0.3.0 及以前「读一次快照」的写法在这里会表现成「保存成功但行为不变」——这是本次改动最容易踩的坑。
+
+**三条降级路径**（都必须成立，`test/client.test.mjs` 覆盖）：拿不到 `configForms` 服务 → 只读页 + 默认值 + 说明；`writable:false`（被更高层覆盖）→ 全部控件禁用并显示「只读」；表单 `status:unavailable` → 同上。
+
+**两个字段要重载才换工具集**：`enableDaily` / `enableVto` 决定 `apply` 里注册哪些工具，是**加载期**决策。页面在「命令系统」卡片上挂了「重载后生效」徽章，避免"关了却没关掉"的误解。
+
+**看设计不必重启**：`npm run preview`（`tools/build-preview.mjs`）从 `lib/client.js` 的三个标记区（`#region preview-dict` / `preview-model` / `preview-css`）提取文案、字段模型与 CSS，生成自包含静态 HTML（默认 `ui-preview.html`）。预览与真实页面同源，不会漂移。
+
+**必须重启才会开始服务这个 bundle**：客户端模块系统按 specifier 缓存包元数据（包括「它不是 client 包」这一否定结论）到进程重启为止，因此**新增 `dsh.client` 后第一次生效必须重启 DSH**；`lib/index.js` 的改动同理。
 
 ## 3. 工具面（10 个）
 
@@ -221,6 +251,15 @@ vto_rollback 按 backups/rN/manifest.json **真正执行回滚**
 
 > 两条官方行为要记住：未被 schema 声明的字段在 `apply` 前被**直接丢弃**（症状是「配了没反应」）；schemastery 里解析为 `null` 的字段在校验结果中「键不存在」，所以 `apply` 必须走 `normalizeConfig()` 兜底。
 
+### 4.5 在插件面板里编辑（0.4.0+）
+
+17 个字段全部写成 `Schema.…volatile()`。这不是修饰：设置服务**只**把 volatile 字段投影成可编辑表单，非 volatile 字段在插件页里根本不会出现（官方 `dsh-settings` README：「表单只展示活动且可唯一定位的 profile 条目中的 volatile 字段」）。由此产生两条硬约束：
+
+1. `apply` 收到的 config 里，字段是**引用**——读取只能经 `liveConfig()`（§2.6）；
+2. 浏览器半保存时写的是 profile patch 的覆盖层，因此「恢复默认」= `unset`，而不是把默认值写回去。
+
+`test/config.test.mjs` 钉住这两条：每个字段都必须是 Volatile 引用，且 `liveConfig()` 必须在源值变化后立刻读到新值。
+
 ## 5. 外部依赖与环境
 
 ### 5.1 依赖矩阵（与 README §2.6 同源）
@@ -290,7 +329,7 @@ node --test test/vto.test.mjs     # 单文件直跑
 
 **不要用 `node --test test/`（目录参数）**：本机 Node 24 + Windows 会报 `Cannot find module ...\test`。
 
-测试文件分工：`config`（schema ≡ DEFAULTS / patch 不带 config）、`docs`（字段数/布局名/模块地图/README 工具与参数真实存在/UTF-8）、`params`（参数基准确认）、`daily`（A 线 + 真实编译）、`vto`（B 线 + 真实 defineTool 端到端）、`ledger`（台账/回滚/数据消费者）、`parse-gate`（上传门禁零调用）、`compile-driver`（驱动选择）、`skillpack`、`vendored-specs`、`tools`（doctor/install 行为）。
+测试文件分工：`client`（浏览器半：加载器格式 / 槽位键 / 字段覆盖 / 降级 / 写入路径）、`config`（schema ≡ DEFAULTS / 全字段 volatile / liveConfig 活性）、`docs`（字段数/布局名/模块地图/README 工具与参数真实存在/UTF-8）、`params`（参数基准确认）、`daily`（A 线 + 真实编译）、`vto`（B 线 + 真实 defineTool 端到端）、`ledger`（台账/回滚/数据消费者）、`parse-gate`（上传门禁零调用）、`compile-driver`（驱动选择）、`skillpack`、`vendored-specs`、`tools`（doctor/install 行为）。
 
 **为什么强调 0 skipped**：`daily.test.mjs` 用 resolve hook 把 `@deepseek-ai/dsh-tools` 换成 stub，该 hook 也作用于 `createRequire`，所以那个文件无法用真实 `defineTool` 校验；真实覆盖在 `vto.test.mjs`。有一条测试专门在 stub 导入失败时变红，防止「全跳过还报 ALL GREEN」。
 
@@ -353,6 +392,10 @@ profile 清单 %USERPROFILE%\.dsh\profiles\<profile>\package.json（dependencies
 | 12 | 备份 | `backupFiles` 跳过不存在的文件，因此 rollback 里「删除新建文件」的分支实际不可达 | 需要时让 `vto_fix` 在写盘前记录新建文件 |
 | 13 | 路径 | 词法守卫看不到 junction/symlink | `realpath` 复检可堵 |
 | 14 | 明确不做 | 六角色团队模式 | 推后；单人 + 守则是当前取舍 |
+| 15 | 配置页 | `enableDaily` / `enableVto` 是**加载期**决策：保存后要重载插件才换工具集 | 页面已挂「重载后生效」徽章；真要热切换得在 volatile 变更事件上重注册工具 |
+| 16 | 验证 | 浏览器半只有 shim 级测试，尚未在真实 Web GUI 里点过一遍（需要重启 DSH 才会开始服务这个 bundle） | 重启后按 §2.6 的降级/写入路径逐条手验一次 |
+| 17 | 部署 | 本机 profile 用 tarball（`file:...tgz`）安装，升级要重新 pack + `tools/install.mjs`，且必须重启 | 见 §9.2；npm 发布后这条消失 |
+| 18 | 环境 | `\$DSH_HOME/profiles/node_modules/@deepseek-ai/schemastery` 在本机是**旧版**（无 `Schema.prototype.volatile`），而 DSH 应用自带的副本有 | 插件已改为**能力探测**（`markVolatile` / `VOLATILE_CONFIG_SUPPORTED`）：旧副本下插件照常加载，只是配置页只读。`doctor` 的 `volatile` 行会说明本目录解析到的是哪一个；要彻底消除，升级/清理那个 profile 级副本 |
 
 ## 12. 排错手册
 
@@ -371,7 +414,17 @@ profile 清单 %USERPROFILE%\.dsh\profiles\<profile>\package.json（dependencies
 
 结构性结论：**PENDING 的插件无法注册工具来报告自己没加载**，所以 `doctor` 必须是插件生命周期之外的 CLI。
 
-### 12.2 常见环境坑
+### 12.2 插件页里看不到配置 / 表单显示「配置表单不可用」
+
+| 症状 | 原因 | 解法 |
+|---|---|---|
+| 插件卡片下压根没有「配置」区 | 没有任何包为 `plugins.bundle.config` 注册这个包名的页面 | 确认装的是 0.4.0+（包内有 `lib/client.js`），然后**重启** DSH：客户端模块系统把包元数据缓存到进程重启为止 |
+| 页面出现，但顶部是「配置表单不可用」 | 浏览器半拿不到 `configForms` 服务（设置 / 配置编辑器没挂载），或该 profile 条目没有 volatile 字段 | 确认组合里有 `@deepseek-ai/dsh-settings` 与 `@deepseek-ai/dsh-config-editor`；确认装的是 0.4.0+（0.4.0 起字段才是 volatile） |
+| 顶部是「配置表单不可用」，但服务都在 | 该条目解析到的 `@deepseek-ai/schemastery` 是**旧版**（无 `Schema.prototype.volatile`）→ 字段没被标记为 volatile | 跑 `node tools/doctor.mjs --dir <部署目录>`，看 `volatile` 行：0 个字段 = 就是这个原因。插件本身仍能加载（`markVolatile` 是能力探测），要恢复可编辑需升级那个 schemastery 副本 |
+| 顶部是「只读」 | 表单 `writable:false`，通常是 profile 的 `cordis.patch.yml` 或命令行 overlay 覆盖了同一批字段 | 属预期行为：覆盖层优先级更高，请在覆盖层里改，或先删掉覆盖 |
+| 保存了但行为不变 | 只有 `enableDaily` / `enableVto` 会这样，它们是加载期决策 | 重载插件或重启；其余字段保存即生效（读的是 `liveConfig`） |
+
+### 12.3 常见环境坑
 
 | 症状 | 原因 | 解法 |
 |---|---|---|
@@ -413,6 +466,7 @@ profile 清单 %USERPROFILE%\.dsh\profiles\<profile>\package.json（dependencies
 
 - **0.1.0**：两条命令线、guard/policy/备份回滚、本地页图、bundled 上游数据。9 工具 + 11 技能（其中 8 个是上游文本，从未被引用）。
 - **0.2.0**：把资产变成承重件。注册技能 11 → 3（上游文本转只读参考）；路径基准统一（此前 `file`/`pdf` 的包含性检查对被写目标之外的一棵树做）；`state.json` v2 + **缺陷台账**；四份数据接上消费者（模板/语义上限/章节下限/角色路由）；`parse` 从空承诺变成受门禁的真实调用；编译驱动改为 latexmk 优先 + `via`/`stopReason`；报告去掉错值（时间戳冒充哈希、不存在的 agent 段落）。
+- **0.4.0**：把配置搬到插件面板。17 个字段全部 `.volatile()`，`apply` 改读 `liveConfig()`（属性访问时才读，保存即生效）；新增浏览器半 `lib/client.js`（lazy-CJS 工厂、只 `require("react")`），注册 `plugins.bundle.config` 与 `plugins.row.config` 两个槽位；新增 `locale/` 展示元信息、`icon.svg`、`npm run preview` 静态预览、`test/client.test.mjs`（最小 React/DOM shim 真跑 bundle）。
 - **0.3.0**：删掉只像承重件的部分。删除 `voidetect.js`（见 §14）与每次调用都刷的「分类法自检」告警；报告改为直接生成（去掉模板/占位符，修掉重复表头与恒为 0 的进度表，进度改由台账计算）；回滚做成真动作（`vto_rollback`）；统一 latexmk 的三处矛盾说法；README 增「环境要求与自助安装」；docs 合并为本文件 + 索引。
 
 ## 附录 A：关键不变量
@@ -430,6 +484,8 @@ profile 清单 %USERPROFILE%\.dsh\profiles\<profile>\package.json（dependencies
 11. 字形替换必须**字面**插入（`String.replace` 会展开 `$&`/`$1`，而 LaTeX 全是 `$`）。
 12. 发布白名单不含 `docs/`、`tools/_p0/`、`*.tgz`。
 13. 不要在 PowerShell 里用 `Get-Content`/`Set-Content` 改含中文的文件（按 ANSI 码页重写会毁文件）。
+14. 配置字段全部 `.volatile()`；读取必须走 `liveConfig()`——快照式读取会让保存静默失效。
+15. 浏览器半 `lib/client.js` 必须自包含、只 `require("react")`，且不依赖本包其它文件（客户端模块系统不给它解析相对导入）。
 
 ## 附录 B：参考资料
 

@@ -1,20 +1,35 @@
 {
   "name": "dsh-latex-studio",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "MiKTeX-native LaTeX compile & VTO typesetting loop for DeepSeek Harness (daily compile + visual typesetting loop with a persistent defect ledger).",
   "type": "module",
   "main": "./lib/index.js",
+  "icon": "./icon.svg",
   "license": "MIT",
   "engines": {
     "node": "^22.19.0 || >=24.0.0",
     "dsh": ">=0.2.0-rc.2"
   },
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
+  },
   "files": [
     "lib",
     "skills",
+    "locale",
+    "icon.svg",
     "test",
     "tools/verify-pdf-read.mjs",
     "tools/vendor-paperfit-specs.mjs",
+    "tools/build-preview.mjs",
     "tools/doctor.mjs",
     "tools/install.mjs",
     "cordis.patch.yml",
@@ -25,6 +40,13 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-plugin-manager"
+      ]
     }
   },
   "keywords": [
@@ -63,6 +85,7 @@
     "test": "node test/run-all.mjs",
     "doctor": "node tools/doctor.mjs",
     "install-plugin": "node tools/install.mjs",
+    "preview": "node tools/build-preview.mjs",
     "vendor-specs": "node tools/vendor-paperfit-specs.mjs"
   }
 }

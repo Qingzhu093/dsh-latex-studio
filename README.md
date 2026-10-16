@@ -229,13 +229,13 @@ if (service?.register) registerSkillPack(service, loadSkillPack().skills)
 | 键 | 默认 | 说明 |
 |---|---|---|
 | `enableDaily` | `true` | 是否注册 A 线 4 个工具 |
-| `enableVto` | `true` | 是否注册 B 线 5 个工具 |
+| `enableVto` | `true` | 是否注册 B 线 6 个工具 |
 | `uploadScope` | `'external-only'` | `external-only` \| `always` \| `never`，见 §5 |
 | `rendererOrder` | `['poppler','miktex-ghostscript','mineru-page']` | 页图后端尝试顺序 |
 | `popplerPath` | `''` | `''` = 自动探测；也可指向 `pdftoppm.exe` |
 | `ghostscriptPath` | `''` | 同上（对应 `mgs.exe`） |
 | `readPdfToolName` | `'read_pdf'` | 注入 `render.js` 的宿主工具名 |
-| `latexCommand` | `''` | `''` = 自动探测 pdflatex/xelatex/lualatex；**latexmk 被显式忽略** |
+| `latexCommand` | `''` | `''` = 自动：检测到 Perl 就用 **latexmk**，否则用内置多趟驱动；也可显式写 `latexmk`/`pdflatex`/`xelatex`/`lualatex` |
 | `enableInstaller` | `true` | MiKTeX 下给引擎加 `--enable-installer` 自动补包 |
 | `engineArgs` | `''` | 追加给引擎的额外参数（支持引号） |
 | `compileTimeoutMs` | `300000` | 编译超时；超时返回 `failed` 且保留 `logTail` |
@@ -246,7 +246,13 @@ if (service?.register) registerSkillPack(service, loadSkillPack().skills)
 | `enableChktex` | `false` | 是否调用 chktex |
 | `chktexPath` | `''` | `''` = 自动探测 |
 
-修改方式：编辑 profile 的 patch（**只写你要改的字段即可**，其余取 schema 默认）后重载；用 `dsh.cmd plugin list --profile desktop` 核对插件是否装入，**生效值**请在应用内设置页查看（`--profile desktop --dump-config` 被 Electron 独占拒绝，见 §2 注）。`apply()` 见 `lib/index.js`，两套体系互相独立——关掉一个不影响另一个。
+修改方式有三种，任选：
+
+1. **插件面板里直接改（0.4.0+，推荐）**：侧栏 → 插件 → `dsh-latex-studio` → 配置。17 个字段都是 `volatile`，开关/下拉即时保存，文本框回车或失焦保存，每组和全局都能「恢复默认」；保存即写入当前 profile 的 patch 覆盖层并立即生效。只有 `enableDaily` / `enableVto` 这两个**加载期**开关需要重载插件。想先看设计不重启，跑 `npm run preview` 生成静态预览页。
+2. 编辑 profile 的 patch（**只写你要改的字段即可**，其余取 schema 默认）后重载。
+3. 用 `dsh.cmd plugin list --profile desktop` 核对插件是否装入（`--profile desktop --dump-config` 被 Electron 独占拒绝，见 §2 注）。
+
+`apply()` 见 `lib/index.js`，两套体系互相独立——关掉一个不影响另一个。
 
 ## 4. 依赖
 
@@ -295,11 +301,12 @@ node tools/verify-pdf-read.mjs --pdf ../latex-demo/.latex-studio/build/main.pdf 
 ```
 dsh-latex-studio/
 ├── lib/
-│   ├── index.js            # 宿主入口：按 enableDaily/enableVto 动态注册（Lead）
-│   ├── config.js           # DEFAULTS + normalizeConfig（唯一配置真源）
+│   ├── index.js            # 宿主入口：按 enableDaily/enableVto 动态注册；Config schema 全字段 volatile
+│   ├── client.js           # 浏览器半：插件面板里的配置页（单文件 lazy-CJS 工厂，只 require react）
+│   ├── config.js           # DEFAULTS + liveConfig（唯一配置真源；volatile 读取）
 │   ├── core/               # 纯 Node ESM，禁止 import @deepseek-ai/*
 │   │   ├── env.js          # 引擎/工具探测、EnvReport
-│   │   ├── compile.js      # 多趟编译驱动（不依赖 latexmk）
+│   │   ├── compile.js      # 编译驱动：latexmk 优先，内置多趟 + makeindex 兜底
 │   │   ├── logparse.js     # .log 解析（移植 PaperFit parse_log.py，MIT）
 │   │   ├── lint.js         # 伪修复/引用对账/图-引用距离
 │   │   ├── bib.js          # .bib lint/format/fill/audit（拒绝写入不完整解析）
@@ -313,11 +320,13 @@ dsh-latex-studio/
 │   │   ├── daily.js        # latex_doctor / latex_build / latex_lint / bib_tool
 │   │   └── vto.js          # vto_start / vto_inspect / vto_fix / vto_verify / vto_report
 │   └── data/               # 在用的 PaperFit 数据（MIT）：分类法 / 阈值 / 报告模板
+├── locale/                 # 插件面板里的标题与描述（en.json / zh.json 的 meta）
+├── icon.svg                # 插件卡片图标
 ├── skills/                 # 操作守则（latex-daily / latex-vto-loop / latex-fix-catalog）
 ├── test/                   # node:test 单测；run-all.mjs 聚合汇总
 ├── docs/                   # 【不随包发布】DEVELOPMENT / INTERFACES / ACCEPTANCE / 索引 + upstream 参考
 │   └── upstream/paperfit/  # 【只读参考】上游 agent/命令原文 + MANIFEST（逐文件 sha256）
-├── tools/                  # 辅助脚本（doctor / install / 页图体检 / 上游参考校验）
+├── tools/                  # 辅助脚本（doctor / install / build-preview 预览 / 页图体检 / 上游参考校验）
 ├── cordis.patch.yml        # bundle 配置层（开关默认值）
 └── THIRD_PARTY_NOTICES.md
 ```
@@ -335,6 +344,8 @@ node --test                       # 不带参数：从当前目录递归发现�
 ```
 
 > ⚠️ **不要用 `node --test test/`（目录参数）**：在本机 Node 24.20 + Windows 下会报 `Cannot find module ...\test`（exit 1）。用上面的 `npm test` / `run-all.mjs` / 单文件 / 无参数形式。
+
+测试分两类：**内核**（config / daily / vto / ledger / compile-driver / lint / bib / render …）与**契约守卫**——`docs`（文档数字与代码一致）、`params`（参数基准）、`vendored-specs`（上游参考未改写）、`client`（浏览器半：加载器格式、槽位键、字段覆盖、降级与写入路径，用最小 React/DOM shim 真跑 bundle）。另有两个不靠单测的入口：`node tools/doctor.mjs`（健康自检）与 `npm run preview`（配置页静态预览）。
 
 ### 开发环境对齐（宿主 0.2.0-rc.2）
 

@@ -12,7 +12,7 @@
  *
  * It answers, in order:
  *   1. Files     — is the package complete? (lib/core modules, skills, patch)
- *   2. Loading   — does apply() register 9 tools + the skill pack, without errors?
+ *   2. Loading   — does apply() register 10 tools + the skill pack, without errors?
  *   3. Wiring    — is the bundle registered in a DSH profile?
  *   4. Shadows   — would a discovery root duplicate the self-registered skills?
  *   5. Toolchain — can LaTeX actually compile and render on this machine?
@@ -57,6 +57,10 @@ const REQUIRED = [
   'lib/core/env.js',
   'lib/tools/daily.js',
   'lib/tools/vto.js',
+  'lib/client.js',
+  'locale/en.json',
+  'locale/zh.json',
+  'icon.svg',
   'lib/data/vto_taxonomy.json',
   'lib/data/layout_rules.json',
   'skills/latex-daily/SKILL.md',
@@ -117,6 +121,17 @@ function checkFiles(pkgDir) {
   return results
 }
 
+/** Unwrap cosmokit Volatile config references (the schema declares every field volatile). */
+function unwrapVolatile(value) {
+  const WRITE = Symbol.for('cosmokit.volatile.write')
+  if (typeof value === 'object' && value !== null && WRITE in value) return unwrapVolatile(value.get())
+  if (Array.isArray(value)) return value.map(unwrapVolatile)
+  if (typeof value === 'object' && value !== null && Object.getPrototypeOf(value) === Object.prototype) {
+    return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, unwrapVolatile(child)]))
+  }
+  return value
+}
+
 async function checkLoading(pkgDir) {
   const results = []
   const entry = path.join(pkgDir, 'lib', 'index.js')
@@ -140,7 +155,7 @@ async function checkLoading(pkgDir) {
 
   let outcome
   try {
-    outcome = mod.apply(ctx, typeof mod.Config === 'function' ? mod.Config({}) : {})
+    outcome = mod.apply(ctx, typeof mod.Config === 'function' ? unwrapVolatile(mod.Config({})) : {})
   } catch (error) {
     return [bad('loading', 'apply() threw: ' + String((error && error.message) || error))]
   }
@@ -164,6 +179,79 @@ async function checkLoading(pkgDir) {
   if (problems.length > 0) {
     results.push(warn('logger', 'the plugin logged warnings during apply(): ' + problems.join(' | ')))
   }
+
+  // The Plugins-page form can only edit volatile fields, so whether this copy can
+  // be configured in the GUI depends on the Schemastery it resolves. Report the
+  // capability instead of assuming it: the DSH app and a stale profile-level copy
+  // can differ, and only a warning here (never a failure) keeps the plugin usable.
+  const WRITE = Symbol.for('cosmokit.volatile.write')
+  let volatileFields = null
+  try {
+    volatileFields = Object.values(mod.Config({})).filter((value) => typeof value === 'object' && value !== null && WRITE in value).length
+  } catch {
+    volatileFields = null
+  }
+  if (volatileFields === null) {
+    results.push(warn('volatile', 'config schema could not be probed'))
+  } else if (volatileFields === 0) {
+    results.push(warn('volatile', 'the @deepseek-ai/schemastery resolved for THIS copy has no schema.volatile(): config is read-only in the Plugins page here (the running Host may resolve a different copy)'))
+  } else {
+    results.push(ok('volatile', volatileFields + ' config fields are volatile → editable in the Plugins page'))
+  }
+  return results
+}
+
+/**
+ * The browser half: nothing in the toolchain compiles or type-checks it, so the
+ * doctor verifies the shape the client module system requires.
+ */
+function checkClient(pkgDir) {
+  const results = []
+  let manifest
+  try {
+    manifest = JSON.parse(fs.readFileSync(path.join(pkgDir, 'package.json'), 'utf8'))
+  } catch (error) {
+    return [bad('client', 'package.json unreadable: ' + String((error && error.message) || error))]
+  }
+  const declaration = manifest?.dsh?.client
+  const exportPath = manifest?.exports?.['./client']
+  if (!declaration || declaration.platform !== 'web') {
+    results.push(bad('client', 'package.json must declare dsh.client with platform "web"'))
+  } else if (declaration.inject !== undefined && !Array.isArray(declaration.inject)) {
+    results.push(bad('client', 'dsh.client.inject must be an array of package names'))
+  } else if (exportPath === undefined) {
+    results.push(bad('client', 'package.json must export "./client"'))
+  } else {
+    results.push(ok('client', 'declares dsh.client (web) and exports ./client'))
+  }
+
+  const bundlePath = path.join(pkgDir, 'lib', 'client.js')
+  if (!fs.existsSync(bundlePath)) return results.concat([bad('clientBundle', 'lib/client.js is missing')])
+  const source = fs.readFileSync(bundlePath, 'utf8')
+  const problems = []
+  if (!/window\.__ModuleLoader__\.load\(/.test(source)) problems.push('not a lazy-CJS factory bundle')
+  if (!/id:\s*"dsh-latex-studio"/.test(source)) problems.push('registers an unexpected module id')
+  for (const require of source.matchAll(/require\("([^"]+)"\)/g)) {
+    if (require[1] !== 'react' && require[1] !== 'react/jsx-runtime') problems.push('requires ' + require[1])
+  }
+  for (const key of ['plugins.bundle.config', 'plugins.row.config']) {
+    if (!source.includes('"' + key + '"')) problems.push('does not register into ' + key)
+  }
+  results.push(problems.length > 0
+    ? bad('clientBundle', 'lib/client.js: ' + problems.join('; '))
+    : ok('clientBundle', 'lazy-CJS factory, requires react only, registers both config slots'))
+
+  for (const locale of ['en.json', 'zh.json']) {
+    const file = path.join(pkgDir, 'locale', locale)
+    try {
+      const meta = JSON.parse(fs.readFileSync(file, 'utf8')).meta
+      if (typeof meta?.title !== 'string' || typeof meta?.description !== 'string') throw new Error('meta.title/meta.description must be non-empty strings')
+    } catch (error) {
+      results.push(bad('locale', locale + ': ' + String((error && error.message) || error)))
+      continue
+    }
+  }
+  if (results.every((r) => r.name !== 'locale')) results.push(ok('locale', 'en/zh display metadata present'))
   return results
 }
 
@@ -340,6 +428,7 @@ async function main() {
   const results = [
     ...checkFiles(pkgDir),
     ...(await checkLoading(pkgDir)),
+    ...checkClient(pkgDir),
     ...checkWiring(pkgDir, profile),
     ...checkSkillShadows(pkgDir),
     ...checkToolchain(pkgDir),

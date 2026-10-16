@@ -3,6 +3,77 @@
 All notable changes to `dsh-latex-studio`. Versioning follows semver; in the 0.x
 range a breaking change moves the MINOR number.
 
+## 0.4.0 — 2026-10-16
+
+Move the configuration into the Plugins page. The plugin now ships a browser half,
+so the 17 fields are editable in the GUI instead of only in a profile patch — and
+saving applies live, without a restart.
+
+### Added
+
+- **`lib/client.js` — the browser half.** One self-contained file in the client
+  module system's lazy-CJS factory format (`window.__ModuleLoader__.load({id, factory})`)
+  that `require`s React and nothing else: no bundler, no build step, no runtime
+  dependency. It renders six cards (编译链 / 页图渲染 / PDF 读取与隐私 / VTO 版面循环 /
+  命令系统 / 可选检查) with switches, selects, a segmented control, checkbox groups
+  and drafts committed on Enter/blur — never per keystroke, because every write is a
+  validated Host mutation that rewrites the profile patch.
+- **Registered on both config surfaces**: `plugins.bundle.config` keyed by the package
+  name (the bundle's own config area) and `plugins.row.config` keyed
+  `dsh-latex-studio#latex-studio` (the component page, so clicking the row is not a
+  dead end). A `summary` render gives the row a one-line description.
+- **`locale/en.json` + `locale/zh.json` display metadata** and **`icon.svg`**, so the
+  plugin card shows a real title, description and artwork instead of the raw package
+  name and the default illustration.
+- **`npm run preview`** (`tools/build-preview.mjs`) renders this page as a
+  self-contained static HTML file from the same `preview-dict` / `preview-model` /
+  `preview-css` regions the bundle ships — a design review without a restart, and it
+  cannot drift into fiction because it is generated from the shipped source.
+- **`test/client.test.mjs`** — 11 tests that execute the real bundle inside a minimal
+  React/DOM shim: loader format, `react`-only requires, both slot keys, model ≡ schema
+  fields, every dictionary key present in zh and en, the three degradation paths, and
+  the write path (`form.set` / `form.unset` / one atomic `form.mutate` for
+  "restore all defaults").
+- `tools/doctor.mjs` now checks the browser half (declaration, export, factory format,
+  requires, slot keys, locale metadata), and `--` its file list grew by four entries.
+
+### Changed
+
+- **All 17 config fields are now `.volatile()`** — the settings service only projects
+  volatile fields into an editable form, so without this the page would have nothing
+  to edit.
+- **`apply` reads config through `liveConfig(ctx, entryConfig)`** (`lib/config.js`)
+  instead of a one-shot `normalizeConfig` snapshot. Volatile fields arrive as
+  references; `liveConfig` re-reads `ctx.fiber?.config` on every property access, so a
+  saved edit is visible to the next tool call. A snapshot read would have made every
+  save succeed silently and change nothing.
+- The settings service is told this plugin owns its page
+  (`settings.configure({ auto: false }, ctx.fiber)`, inside an optional
+  `ctx.inject(['settings'], …)` child). It changes page presentation only; a host
+  without the service still loads the plugin.
+- `package.json` gains `dsh.client`, `exports["./client"]`, `exports["./package.json"]`,
+  `exports["./locale/*.json"]` and the `icon` field.
+- README §3 no longer claims `latexmk` is ignored by `latexCommand` (stale since
+  0.3.0) and no longer says the B line has 5 tools (it has 6).
+
+### Known at release
+
+- `enableDaily` / `enableVto` remain **load-time** decisions: they change which tools
+  `apply` registers, so saving them needs a plugin reload. The card carries an
+  explicit「重载后生效」badge instead of pretending otherwise.
+- **`.volatile()` is capability-probed** (`markVolatile` in `lib/config.js`,
+  `VOLATILE_CONFIG_SUPPORTED` in `lib/index.js`), because not every Schemastery copy a
+  host may resolve has `Schema.prototype.volatile`: measured on this machine the DSH
+  app's copy does, while the profile-level `@deepseek-ai/schemastery` symlink points at
+  a stale global `dsh` install that does not. Calling it unconditionally made the whole
+  plugin fail to import there (`...volatile is not a function`). Now the plugin always
+  loads; only the form degrades to read-only, and `doctor` reports which case applies
+  (`volatile` line) plus a load-time warning naming the cause.
+- The browser half has shim-level tests only. Adding `dsh.client` to a package is
+  cached per specifier until the Host process restarts, so the live page has not been
+  clicked through yet at release time; `docs/DEVELOPMENT.md` §11 keeps that debt and
+  §12.2 lists the checks to run after a restart.
+
 ## 0.3.0 — 2026-10-11
 
 Cut the parts that only looked load-bearing. Three of the four cuts below were
