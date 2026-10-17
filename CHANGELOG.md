@@ -34,8 +34,15 @@ saving applies live, without a restart.
   fields, every dictionary key present in zh and en, the three degradation paths, and
   the write path (`form.set` / `form.unset` / one atomic `form.mutate` for
   "restore all defaults").
+- **`npm run verify:package`** (`tools/verify-package.mjs`) — the release gate that
+  `doctor` cannot be: it packs a real tarball, asserts the file whitelist (no `docs/`,
+  no `tools/_p0/`, no `node_modules`), the required entries, every `exports` target,
+  the `dsh.bundle` / `dsh.client` manifests, the icon and locale metadata, zero runtime
+  dependencies, then extracts the tarball and actually `import`s the shipped host half
+  (10 tools, 3 skills) and inspects the shipped browser half. It prints the size and
+  sha256 of the artifact it verified.
 - `tools/doctor.mjs` now checks the browser half (declaration, export, factory format,
-  requires, slot keys, locale metadata), and `--` its file list grew by four entries.
+  requires, slot keys, locale metadata), and its file list grew by four entries.
 
 ### Changed
 

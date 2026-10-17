@@ -6,6 +6,15 @@
   "main": "./lib/index.js",
   "icon": "./icon.svg",
   "license": "MIT",
+  "author": "Qingzhu093",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Qingzhu093/dsh-latex-studio.git"
+  },
+  "homepage": "https://github.com/Qingzhu093/dsh-latex-studio#readme",
+  "bugs": {
+    "url": "https://github.com/Qingzhu093/dsh-latex-studio/issues"
+  },
   "engines": {
     "node": "^22.19.0 || >=24.0.0",
     "dsh": ">=0.2.0-rc.2"
@@ -30,6 +39,7 @@
     "tools/verify-pdf-read.mjs",
     "tools/vendor-paperfit-specs.mjs",
     "tools/build-preview.mjs",
+    "tools/verify-package.mjs",
     "tools/doctor.mjs",
     "tools/install.mjs",
     "cordis.patch.yml",
@@ -86,6 +96,7 @@
     "doctor": "node tools/doctor.mjs",
     "install-plugin": "node tools/install.mjs",
     "preview": "node tools/build-preview.mjs",
+    "verify:package": "node tools/verify-package.mjs",
     "vendor-specs": "node tools/vendor-paperfit-specs.mjs"
   }
 }

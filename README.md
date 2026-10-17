@@ -51,8 +51,10 @@ node tools/doctor.mjs --dir <安装副本>  # 检查别的副本
 node tools/doctor.mjs --json           # 机器可读（CI 用）
 ```
 
-它按顺序回答 5 个问题：**文件齐不齐 → `apply()` 能否注册 9 工具 + 技能包 → bundle 有没有登记进
+它按顺序回答 5 个问题：**文件齐不齐 → `apply()` 能否注册 10 个工具 + 技能包 → bundle 有没有登记进
 profile → 发现根里有没有重复技能（会互相遮蔽）→ 本机 LaTeX 工具链能不能真编译/渲染**。
+0.4.0 起还会检查**浏览器半**（`lib/client.js` 的加载器格式与槽位注册）、`locale/` 展示元信息，
+并在 `volatile` 行报告本副本解析到的 Schemastery 是否支持 `.volatile()`（决定插件面板里的配置表单可编辑还是只读）。
 
 退出码：`0` 健康｜`1` 有失败项｜`2` 脚本自身出错。本机实测输出：
 
@@ -77,14 +79,24 @@ verdict: HEALTHY
 
 ```powershell
 npm pack
-& "D:\DshDesktop\resources\runtime\cli\bin\dsh.cmd" plugin --profile desktop add (Resolve-Path .\dsh-latex-studio-0.1.0.tgz)
+& "D:\DshDesktop\resources\runtime\cli\bin\dsh.cmd" plugin --profile desktop add (Resolve-Path .\dsh-latex-studio-*.tgz)
 & "D:\DshDesktop\resources\runtime\cli\bin\dsh.cmd" plugin list --profile desktop
 ```
 
-> ⚠️ 请用上面的**全路径** `dsh.cmd`：PATH 上还有一个旧版 `dsh`（**0.1.5-rc.1**），桌面端自带的是
-> **0.2.0-rc.2**；用错版本操作不到桌面端 profile（见 §9）。
+> ⚠️ 请用上面的**全路径** `dsh.cmd`（默认安装在 `D:\DshDesktop\resources\runtime\cli\bin\`）：
+> PATH 上可能还有更早的全局 `dsh`（本机是 **0.1.5-rc.1**），桌面端自带的是 **0.2.1-rc.2**；
+> 用错版本操作不到桌面端 profile（见 §9）。
 > ⚠️ 本机实测 `dsh plugin add` 在 Electron 独占管理的 profile 上**会挂起**，所以日常请用 §2.1 的脚本。
 > 也**不要**用 `--profile desktop --dump-config` 校验（同样被拒绝）。
+
+**从 GitHub 安装（无需构建）**：本仓库直接提交可运行的 `lib/`（纯 JS，没有构建步骤、没有 `prepare` 脚本），
+所以 `github:` 安装不需要授权任何构建脚本：
+
+```powershell
+& "D:\DshDesktop\resources\runtime\cli\bin\dsh.cmd" plugin --profile desktop add github:Qingzhu093/dsh-latex-studio
+# 建议锁定 commit，避免后续推送悄悄改变实际运行的代码：
+& "...\dsh.cmd" plugin --profile desktop add github:Qingzhu093/dsh-latex-studio#<sha>
+```
 
 ### 2.4 升级 / 卸载
 
@@ -95,6 +107,12 @@ node tools/doctor.mjs         # 升级后自检
 
 卸载：从 profile 的 `package.json` 删掉 `dependencies` 里的依赖与 `dsh.profile.bundles` 里的条目，
 再删掉安装副本目录。（清单在 `$DSH_HOME/profiles/<名字>/package.json`，`$DSH_HOME` 默认 `~/.dsh`。）
+
+**发布前自证**：`npm run verify:package`（`tools/verify-package.mjs`）会真的 `npm pack` 一份 tarball，
+然后逐条断言：白名单没漏进 `docs/`/`tools/_p0/`/`node_modules`、必需文件齐全、`exports` 的每个目标都在包里、
+从**解包后的副本**里 `import` 宿主半并跑通 `apply()`（10 工具 + 3 技能）、浏览器半是客户端模块系统要的
+lazy-CJS 工厂且只 `require("react")`、零运行时依赖、图标与 locale 元信息合法，最后打印字节数与 sha256。
+`doctor` 查"这个目录对不对"，`verify:package` 查"这个包装出去会不会坏"——两者互补。
 
 ### 2.5 技能：由插件自己注册（不需要额外步骤）
 
@@ -326,7 +344,7 @@ dsh-latex-studio/
 ├── test/                   # node:test 单测；run-all.mjs 聚合汇总
 ├── docs/                   # 【不随包发布】DEVELOPMENT / INTERFACES / ACCEPTANCE / 索引 + upstream 参考
 │   └── upstream/paperfit/  # 【只读参考】上游 agent/命令原文 + MANIFEST（逐文件 sha256）
-├── tools/                  # 辅助脚本（doctor / install / build-preview 预览 / 页图体检 / 上游参考校验）
+├── tools/                  # 辅助脚本（doctor / install / verify-package / build-preview / 页图体检 / 上游参考校验）
 ├── cordis.patch.yml        # bundle 配置层（开关默认值）
 └── THIRD_PARTY_NOTICES.md
 ```
@@ -341,6 +359,8 @@ node test/run-all.mjs --json      # 机器可读
 node test/run-all.mjs vto         # 只跑文件名含 vto 的测试
 node --test test/vto.test.mjs     # 单文件直跑 node:test（原生 spec 输出）
 node --test                       # 不带参数：从当前目录递归发现测试
+npm run verify:package            # 封装自证：真的 npm pack 一份，逐条断言后再解包跑 apply()
+npm run preview                   # 生成配置页静态预览（ui-preview.html）
 ```
 
 > ⚠️ **不要用 `node --test test/`（目录参数）**：在本机 Node 24.20 + Windows 下会报 `Cannot find module ...\test`（exit 1）。用上面的 `npm test` / `run-all.mjs` / 单文件 / 无参数形式。

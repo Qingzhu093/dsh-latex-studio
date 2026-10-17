@@ -333,7 +333,9 @@ node --test test/vto.test.mjs     # 单文件直跑
 
 **为什么强调 0 skipped**：`daily.test.mjs` 用 resolve hook 把 `@deepseek-ai/dsh-tools` 换成 stub，该 hook 也作用于 `createRequire`，所以那个文件无法用真实 `defineTool` 校验；真实覆盖在 `vto.test.mjs`。有一条测试专门在 stub 导入失败时变红，防止「全跳过还报 ALL GREEN」。
 
-其他验证入口：`node tools/doctor.mjs`（健康自检，退出码 0/1/2，`--json` 给 CI）、`node tools/install.mjs`（打包→注册→镜像→验证）、`node tools/verify-pdf-read.mjs --pdf <pdf>`（页图通道三态）。
+其他验证入口：`node tools/doctor.mjs`（健康自检，退出码 0/1/2，`--json` 给 CI）、`node tools/install.mjs`（打包→注册→镜像→验证）、`node tools/verify-package.mjs`（封装自证，见 §9.4）、`node tools/verify-pdf-read.mjs --pdf <pdf>`（页图通道三态）。
+
+**`doctor` 与 `verify:package` 的分工**：前者查"这个目录对不对"（已解包、已部署的副本），后者查"这个包装出去会不会坏"（`npm pack` 之后的 tarball：白名单、必需文件、`exports` 目标、解包后真跑 `apply()`、浏览器半格式、零依赖、图标与 locale）。两者都不是对方的超集：漏进 `files` 的文件只有后者能发现，而 profile 登记、工具链、技能遮蔽只有前者能发现。
 
 ## 9. 安装 / 升级 / 卸载 / 发布
 
@@ -359,6 +361,15 @@ profile 清单 %USERPROFILE%\.dsh\profiles\<profile>\package.json（dependencies
 从 profile 的 `dependencies` 删除依赖、从 `dsh.profile.bundles` 删除条目，再删除安装副本目录。
 
 ### 9.4 面向 npm / GitHub 发布
+
+**当前发布通道：GitHub（公开仓库）** —— <https://github.com/Qingzhu093/dsh-latex-studio>，默认分支 `master`。
+仓库直接提交可运行的 `lib/`（纯 JS，无构建步骤、无 `prepare` 脚本），所以 `dsh plugin add github:Qingzhu093/dsh-latex-studio`
+不需要授权任何构建脚本；锁定 commit 更稳。`docs/` 与 `tools/_p0/` 不进 npm 包（前者是维护者资料，后者是立项期调研证据，且已从 git 历史中剔除）。
+
+**发布前必跑**：`npm test`（0 failed / 0 skipped）→ `node tools/doctor.mjs`（HEALTHY）→ `npm run verify:package`（PACKAGE OK，并记下 sha256）。
+
+**注意本机的 git 网络**：全局配置把 HTTPS 走了 DevSidecar 代理（`http.proxy=http://127.0.0.1:31181`），对 github.com 会 `ECONNRESET`；
+`gh` 的 API 与 **SSH**（`git@github.com`）都正常，所以 remote 用 SSH 推送，不要用 HTTPS remote。
 
 官方《打包与安装插件》给出的形态（本仓库已符合）：bundle 用 `dsh.bundle.patch`；patch 里的插件行按**包名**引用；共享 dsh 包同时进 `peerDependencies` 与 `devDependencies`；`files` 是发布白名单（本仓库**不含** `docs/`、`tools/_p0/`）。
 
