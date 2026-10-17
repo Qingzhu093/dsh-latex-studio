@@ -63,6 +63,19 @@ saving applies live, without a restart.
 - README §3 no longer claims `latexmk` is ignored by `latexCommand` (stale since
   0.3.0) and no longer says the B line has 5 tools (it has 6).
 
+### Fixed
+
+- **A fresh clone now reproduces the suite.** Publishing the repo immediately paid
+  for itself: cloning it and running the tests there failed 5 of 147 while the
+  author's checkout stayed green. Two causes, both real. `compile-driver` and
+  `parse-gate` copied `../../latex-demo` — a project beside the repository, never
+  committed, which only happened to hold a PDF from an earlier acceptance run — so
+  they now use the committed `test/fixtures/demo` through `test/helpers/demo.mjs`
+  and compile it themselves only when the PDF is consumed. And `core.autocrlf`
+  rewrote the vendored upstream prose on checkout, breaking the byte-identity
+  check against `docs/upstream` MANIFEST sha256: `.gitattributes` now pins
+  `eol=lf` for text and `-text` for `docs/upstream/**`.
+
 ### Known at release
 
 - `enableDaily` / `enableVto` remain **load-time** decisions: they change which tools

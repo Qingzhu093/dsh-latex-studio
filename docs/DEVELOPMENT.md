@@ -335,6 +335,19 @@ node --test test/vto.test.mjs     # 单文件直跑
 
 其他验证入口：`node tools/doctor.mjs`（健康自检，退出码 0/1/2，`--json` 给 CI）、`node tools/install.mjs`（打包→注册→镜像→验证）、`node tools/verify-package.mjs`（封装自证，见 §9.4）、`node tools/verify-pdf-read.mjs --pdf <pdf>`（页图通道三态）。
 
+**发布后必须验一次"别人拿到仓库能不能跑"**（不是看作者工作树）：
+
+```powershell
+$tmp = Join-Path $env:TEMP 'dsh-latex-studio-clone'
+git clone git@github.com:Qingzhu093/dsh-latex-studio.git $tmp   # SSH：本机 HTTPS 会走 DevSidecar 代理并 ECONNRESET
+# 本机 ~/.npmrc 里的 proxy/https-proxy 指向 DevSidecar，npm 会 500；用一份关掉代理的 userconfig：
+npm install --userconfig <proxy=null 的 npmrc> --no-audit --no-fund
+npm test                 # 期望 147/147，0 failed 0 skipped
+npm run verify:package   # 期望 PACKAGE OK
+```
+
+这条检查抓的正是 0.4.0 发布时真实发生的两件事：测试依赖了仓库外的 `latex-demo`（含历史产物），以及 `autocrlf` 改写了 vendored 上游文本导致哈希校验失败。**作者工作树绿 ≠ 公开仓库能跑**。
+
 **`doctor` 与 `verify:package` 的分工**：前者查"这个目录对不对"（已解包、已部署的副本），后者查"这个包装出去会不会坏"（`npm pack` 之后的 tarball：白名单、必需文件、`exports` 目标、解包后真跑 `apply()`、浏览器半格式、零依赖、图标与 locale）。两者都不是对方的超集：漏进 `files` 的文件只有后者能发现，而 profile 登记、工具链、技能遮蔽只有前者能发现。
 
 ## 9. 安装 / 升级 / 卸载 / 发布
@@ -370,6 +383,8 @@ profile 清单 %USERPROFILE%\.dsh\profiles\<profile>\package.json（dependencies
 
 **注意本机的 git 网络**：全局配置把 HTTPS 走了 DevSidecar 代理（`http.proxy=http://127.0.0.1:31181`），对 github.com 会 `ECONNRESET`；
 `gh` 的 API 与 **SSH**（`git@github.com`）都正常，所以 remote 用 SSH 推送，不要用 HTTPS remote。
+同样地，`~/.npmrc` 里有 `proxy=http://127.0.0.1:31181`（DevSidecar），某些 scoped 包会返回 `500 Internal Server Error - DevSidecar Error`；
+绕过方式是临时 userconfig：`npm install --userconfig <含 proxy=null 的文件>`（本机实测 3 秒装完 22 个 devDependencies）。
 
 官方《打包与安装插件》给出的形态（本仓库已符合）：bundle 用 `dsh.bundle.patch`；patch 里的插件行按**包名**引用；共享 dsh 包同时进 `peerDependencies` 与 `devDependencies`；`files` 是发布白名单（本仓库**不含** `docs/`、`tools/_p0/`）。
 
