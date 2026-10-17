@@ -1,0 +1,15 @@
+# Every text file checks out with LF on every platform, so the byte-identity
+# checks (docs/upstream MANIFEST sha256) and generated-file assertions hold in a
+# fresh clone on Windows too. Without this, core.autocrlf=true rewrites the
+# vendored upstream text and `test/vendored-specs.test.mjs` fails on checkout.
+* text=auto eol=lf
+
+# Vendored upstream prose is reference material: preserve its bytes exactly.
+docs/upstream/** -text
+
+# Binary assets and fixtures.
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary

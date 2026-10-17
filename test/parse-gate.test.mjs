@@ -9,12 +9,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
-const HERE = path.dirname(fileURLToPath(import.meta.url))
-const DEMO = path.resolve(HERE, '..', '..', 'latex-demo')
+import { makeProject } from './helpers/demo.mjs'
 
 test('parse gate: no upload without consent, structured payload with it', async () => {
   const { apply, Config } = await import('../lib/index.js')
@@ -43,8 +39,9 @@ test('parse gate: no upload without consent, structured payload with it', async 
     Config({}),
   )
 
-  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'parse-gate-'))
-  fs.cpSync(DEMO, path.join(work, 'paper'), { recursive: true })
+  // The gate needs a real PDF to resolve, so the fixture is compiled here instead
+  // of copying a sibling project that only had a build from an earlier run.
+  const { root: work } = await makeProject({ compile: true, name: 'paper' })
   const exec = { agent: { session: { header: { cwd: work } } } }
   try {
     const denied = await registered.get('vto_inspect').execute({ dir: 'paper', pages: '1', parse: true }, exec)

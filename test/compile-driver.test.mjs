@@ -10,22 +10,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { build } from '../lib/core/compile.js'
 import { latexmkStatus } from '../lib/core/env.js'
-
-const HERE = path.dirname(fileURLToPath(import.meta.url))
-const DEMO = path.resolve(HERE, '..', '..', 'latex-demo')
-
-function makeProject() {
-  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'driver-test-'))
-  fs.copyFileSync(path.join(DEMO, 'main.tex'), path.join(work, 'main.tex'))
-  fs.copyFileSync(path.join(DEMO, 'refs.bib'), path.join(work, 'refs.bib'))
-  return work
-}
+import { makeProject } from './helpers/demo.mjs'
 
 test('driver: latexmkStatus reports path/perl/version coherently', () => {
   const status = latexmkStatus()
@@ -41,7 +29,7 @@ test('driver: latexmkStatus reports path/perl/version coherently', () => {
 })
 
 test('driver: auto prefers latexmk when available, else falls back with an explanation', async () => {
-  const work = makeProject()
+  const { root, project: work } = await makeProject()
   try {
     const status = latexmkStatus()
     const result = await build({ dir: work, engine: 'auto', config: {} })
@@ -61,18 +49,18 @@ test('driver: auto prefers latexmk when available, else falls back with an expla
       assert.ok((forced.advice || []).some((a) => /latexmk/.test(String(a.message))), 'the fallback must say why')
     }
   } finally {
-    fs.rmSync(work, { recursive: true, force: true })
+    fs.rmSync(root, { recursive: true, force: true })
   }
 })
 
 test('driver: an explicit engine bypasses latexmk (no silent driver swap)', async () => {
-  const work = makeProject()
+  const { root, project: work } = await makeProject()
   try {
     const result = await build({ dir: work, engine: 'pdflatex', config: {} })
     assert.equal(result.status, 'passed')
     assert.equal(result.via, 'builtin', 'an explicitly requested engine is driven directly')
     assert.equal(result.engine, 'pdflatex')
   } finally {
-    fs.rmSync(work, { recursive: true, force: true })
+    fs.rmSync(root, { recursive: true, force: true })
   }
 })

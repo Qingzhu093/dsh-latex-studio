@@ -1,0 +1,46 @@
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage[numbers]{natbib}
+
+\title{A Minimal LaTeX Smoke Test}
+\author{DSH verification}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This project exists to prove that a real TeX engine can compile it end to end,
+and that the bib tools can audit it.
+\end{abstract}
+
+\section{Introduction}
+Typesetting quality matters \citep{knuth1984texbook, vaswani2017attention}.
+A compile-and-fix loop is what makes an agent reliable on LaTeX.
+
+\section{Method}
+\begin{equation}
+  \label{eq:main}
+  \mathcal{L}(\theta) = \sum_{i=1}^{N} \left( y_i - f_\theta(x_i) \right)^2 .
+\end{equation}
+
+\begin{table}[t]
+  \centering
+  \caption{Compile success rate by task difficulty.}
+  \label{tab:rates}
+  \begin{tabular}{lcc}
+    \toprule
+    Model & Easy & Hard \\
+    \midrule
+    baseline & 0.71 & 0.32 \\
+    with compile loop & 0.98 & 0.86 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}
