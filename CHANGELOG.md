@@ -3,6 +3,40 @@
 All notable changes to `dsh-latex-studio`. Versioning follows semver; in the 0.x
 range a breaking change moves the MINOR number.
 
+## 0.4.1 — 2026-10-17
+
+Fix the configuration page being permanently read-only on a host whose peer tree
+resolves a pre-volatile Schemastery.
+
+### Fixed
+
+- **The Plugins-page form now works even when the host's `@deepseek-ai/schemastery`
+  has no `.volatile()`.** Reported symptom after a clean restart: the page rendered
+  but showed 配置表单不可用, every field at its default, and 命令系统 reading 已关闭.
+  Root cause measured on the machine: `$DSH_HOME/profiles/node_modules/@deepseek-ai/`
+  is a junction tree left behind by an old **global** DSH install, and its
+  `@deepseek-ai/schemastery` is 3.18.2 — no `Schema.prototype.volatile`. Since the
+  settings service only projects volatile fields, the entry had no config namespace
+  at all, so `configForms.get()` answered `unavailable`; `doctor` had been reporting
+  exactly that as a warning on the deployed copy. Repairing a machine is not
+  something a package can ship, so the schema library is now chosen at load time:
+  `selectSchema()` (`lib/index.js`) keeps using the host copy when it supports
+  volatile — the normal case, so schema envelopes stay in sync with the running
+  host — and otherwise uses the bundled `lib/vendor/schemastery.mjs`
+  (+ `cosmokit.mjs`), extracted from the DSH 0.2.1-rc.2 runtime. Volatile references
+  stay interoperable across copies because cosmokit identifies them with
+  `Symbol.for("cosmokit.volatile.write")`. A load warning names the stale peer tree,
+  because it usually means other packages resolve to that old install too.
+- Third-party notices: the vendored schema libraries are attributed, and the
+  `voidetect.js` port deleted in 0.3.0 is finally described as historical instead of
+  present.
+
+### Notes
+
+- On a healthy host nothing changes: `SCHEMA_SOURCE` stays `host` and the bundled
+  copy is never used. `test/config.test.mjs` covers both branches, including a
+  pre-volatile peer shape and a broken one.
+
 ## 0.4.0 — 2026-10-16
 
 Move the configuration into the Plugins page. The plugin now ships a browser half,

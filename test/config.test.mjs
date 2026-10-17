@@ -104,16 +104,48 @@ test('config: schema defaults match DEFAULTS for every non-null field', { skip }
   }
 })
 
-test('config: every declared field is volatile wherever Schemastery supports it', { skip }, async () => {
-  const { VOLATILE_CONFIG_SUPPORTED } = await import('../lib/index.js')
+test('config: every declared field is volatile on every deployment', { skip }, async () => {
+  const { VOLATILE_CONFIG_SUPPORTED, SCHEMA_SOURCE } = await import('../lib/index.js')
+  assert.equal(VOLATILE_CONFIG_SUPPORTED, true, 'the bundled fallback must guarantee volatile support even on an old host copy')
+  assert.ok(['host', 'vendored'].includes(SCHEMA_SOURCE), 'unexpected schema source: ' + SCHEMA_SOURCE)
   const validated = Config(fullSample())
   for (const key of defaultKeys) {
-    if (VOLATILE_CONFIG_SUPPORTED) {
-      assert.ok(isVolatileRef(validated[key]), 'field "' + key + '" is not a Volatile reference: the Plugins page form would not show it')
-    } else {
-      assert.ok(!isVolatileRef(validated[key]), 'an older Schemastery resolved here; the field must stay a plain value so the plugin still loads')
-    }
+    assert.ok(isVolatileRef(validated[key]), 'field "' + key + '" is not a Volatile reference: the Plugins page form would not show it')
   }
+})
+
+test('config: an old Schemastery peer is replaced by the bundled copy, not accepted', async () => {
+  const { selectSchema, VOLATILE_CONFIG_SUPPORTED } = await import('../lib/index.js')
+
+  // The shape a pre-volatile copy has: object()/boolean() exist, volatile() does not.
+  const oldPeer = {
+    object: (dict) => ({ dict }),
+    boolean: () => ({}),
+    string: () => ({}),
+  }
+  const fallback = selectSchema(oldPeer)
+  assert.equal(fallback.source, 'vendored', 'a copy without volatile() must never be used: the page would be read-only')
+  assert.equal(typeof fallback.schema.boolean().volatile, 'function', 'the bundled copy supports volatile')
+  assert.equal(VOLATILE_CONFIG_SUPPORTED, true)
+
+  // A capable peer is preferred, so the schema stays in sync with the running host.
+  const modern = await import('@deepseek-ai/schemastery')
+  const chosen = selectSchema(modern.default)
+  assert.equal(chosen.source, 'host')
+
+  // Broken peers degrade to the bundled copy instead of throwing at load.
+  assert.equal(selectSchema(undefined).source, 'vendored')
+  assert.equal(selectSchema({ object() { throw new Error('boom') } }).source, 'vendored')
+})
+
+test('config: the bundled schema produces refs the host recognizes', async () => {
+  const { selectSchema } = await import('../lib/index.js')
+  const WRITE = Symbol.for('cosmokit.volatile.write')
+  const schema = selectSchema(undefined).schema
+  const value = schema.object({ n: schema.number().default(7).volatile() })({})
+  assert.equal(typeof value.n, 'object')
+  assert.ok(WRITE in value.n, 'the ref must expose the shared write symbol, or the host cannot update or detect it')
+  assert.equal(value.n.get(), 7)
 })
 
 test('config: markVolatile degrades instead of throwing on an older Schemastery', () => {

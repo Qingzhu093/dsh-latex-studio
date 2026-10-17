@@ -54,16 +54,20 @@ node tools/doctor.mjs --json           # 机器可读（CI 用）
 它按顺序回答 5 个问题：**文件齐不齐 → `apply()` 能否注册 10 个工具 + 技能包 → bundle 有没有登记进
 profile → 发现根里有没有重复技能（会互相遮蔽）→ 本机 LaTeX 工具链能不能真编译/渲染**。
 0.4.0 起还会检查**浏览器半**（`lib/client.js` 的加载器格式与槽位注册）、`locale/` 展示元信息，
-并在 `volatile` 行报告本副本解析到的 Schemastery 是否支持 `.volatile()`（决定插件面板里的配置表单可编辑还是只读）。
+并在 `volatile` 行报告本副本解析到的 Schemastery 支持情况（0.4.1 起即使宿主那棵树是旧版，插件也会换用自带的副本，配置页仍可编辑；见 DEVELOPMENT §4.5）。
 
 退出码：`0` 健康｜`1` 有失败项｜`2` 脚本自身出错。本机实测输出：
 
 ```
-[OK  ] files      26 required files present
+[OK  ] files      28 required files present
 [OK  ] patch      inserts the plugin row with no duplicated defaults
-[OK  ] tools      9 tools registered: latex_doctor, latex_build, latex_lint, bib_tool,
-                  vto_start, vto_inspect, vto_fix, vto_verify, vto_report
+[OK  ] tools      10 tools registered: latex_doctor, latex_build, latex_lint, bib_tool,
+                  vto_start, vto_inspect, vto_fix, vto_verify, vto_report, vto_rollback
 [OK  ] skills     3 skills registered: latex-daily, latex-fix-catalog, latex-vto-loop
+[OK  ] volatile   17 config fields are volatile → editable in the Plugins page
+[OK  ] client     declares dsh.client (web) and exports ./client
+[OK  ] clientBundle lazy-CJS factory, requires react only, registers both config slots
+[OK  ] locale     en/zh display metadata present
 [OK  ] profile    registered in: desktop
 [OK  ] in-sync    this directory IS what profile "desktop" loads
 [OK  ] shadows    no discovery root duplicates the plugin-registered skills
@@ -72,6 +76,8 @@ profile → 发现根里有没有重复技能（会互相遮蔽）→ 本机 LaT
 [OK  ] bib        bibliography tooling: bibtex, biber
 verdict: HEALTHY
 ```
+
+> 如果宿主解析到的是**旧版** schemastery，这一行会变成 `volatile` 的说明 + 一条 `logger` WARN（提示正在使用插件自带的副本），verdict 仍是 HEALTHY——配置页照常可编辑。
 
 ### 2.3 手工安装（不用脚本时）
 

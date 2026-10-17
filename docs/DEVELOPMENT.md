@@ -61,6 +61,7 @@ dsh-latex-studio/
 │   ├── index.js          插件入口：Config schema（全字段 volatile）+ 同步 apply()
 │   ├── client.js         浏览器半：插件面板配置页（lazy-CJS 工厂，只 require react；见 §2.6）
 │   ├── config.js         DEFAULTS + normalizeField/normalizeConfig + liveConfig()
+│   ├── vendor/           宿主 schemastery 缺 .volatile() 时的兜底副本（schemastery.mjs + cosmokit.mjs，见 §4.5）
 │   ├── core/             零 DSH 依赖
 │   │   ├── paths.js        路径词法守卫的**唯一实现**
 │   │   ├── rules.js        FORBIDDEN 规则表 + extractProtected（policy/guard/lint 共用）
@@ -260,6 +261,12 @@ vto_rollback 按 backups/rN/manifest.json **真正执行回滚**
 
 `test/config.test.mjs` 钉住这两条：每个字段都必须是 Volatile 引用，且 `liveConfig()` 必须在源值变化后立刻读到新值。
 
+**schema 库在加载时挑选，不是无条件信任宿主副本**（0.4.1，实测故障）：设置服务只投影 volatile 字段，而 `Schema.prototype.volatile` 并非每个 `@deepseek-ai/schemastery` 副本都有。本机踩到的是——`$DSH_HOME/profiles/node_modules/@deepseek-ai/` 是一棵指向**旧全局 dsh 安装**的 junction 树，其中的 schemastery 是 3.18.2（无 volatile）。后果不是报错，而是**静默只读**：条目没有出现在设置命名空间里，页面显示「配置表单不可用」、字段全是默认值。
+
+`selectSchema()`（`lib/index.js`）因此：宿主副本支持 `.volatile()` 就用宿主副本（正常情况，schema envelope 与运行中的宿主同版本，客户端与 ConfigEditor 才能互认）；否则用 `lib/vendor/schemastery.mjs`（+ `cosmokit.mjs`，从 DSH 0.2.1-rc.2 运行时取出，仅改写了一行 import）。跨副本仍互通，因为 cosmokit 用 `Symbol.for("cosmokit.volatile.write")` 识别引用。选中自带副本时 `apply` 会 warn 一次：那棵旧 peer 树通常也意味着别的包解析到了旧安装。
+
+**根治仍是修宿主那一层**（可选）：把 `profiles/node_modules/@deepseek-ai/schemastery` 指回与 DSH 应用同版本的副本。插件层面已经不再依赖它。
+
 ## 5. 外部依赖与环境
 
 ### 5.1 依赖矩阵（与 README §2.6 同源）
@@ -421,7 +428,7 @@ profile 清单 %USERPROFILE%\.dsh\profiles\<profile>\package.json（dependencies
 | 15 | 配置页 | `enableDaily` / `enableVto` 是**加载期**决策：保存后要重载插件才换工具集 | 页面已挂「重载后生效」徽章；真要热切换得在 volatile 变更事件上重注册工具 |
 | 16 | 验证 | 浏览器半只有 shim 级测试，尚未在真实 Web GUI 里点过一遍（需要重启 DSH 才会开始服务这个 bundle） | 重启后按 §2.6 的降级/写入路径逐条手验一次 |
 | 17 | 部署 | 本机 profile 用 tarball（`file:...tgz`）安装，升级要重新 pack + `tools/install.mjs`，且必须重启 | 见 §9.2；npm 发布后这条消失 |
-| 18 | 环境 | `\$DSH_HOME/profiles/node_modules/@deepseek-ai/schemastery` 在本机是**旧版**（无 `Schema.prototype.volatile`），而 DSH 应用自带的副本有 | 插件已改为**能力探测**（`markVolatile` / `VOLATILE_CONFIG_SUPPORTED`）：旧副本下插件照常加载，只是配置页只读。`doctor` 的 `volatile` 行会说明本目录解析到的是哪一个；要彻底消除，升级/清理那个 profile 级副本 |
+| 18 | 环境 | `\$DSH_HOME/profiles/node_modules/@deepseek-ai/` 是指向**旧全局 dsh 安装**的 junction 树（其中的 schemastery 3.18.2 无 `.volatile()`） | 0.4.1 起插件**不再依赖**它：`selectSchema()` 在宿主副本缺 volatile 时换用 `lib/vendor/` 自带副本（§4.5），配置页照常可编辑；`doctor` 的 `volatile` 行 + `logger` 行会显示用了哪一份。宿主那棵旧树本身仍是环境问题（别的包也会解析到旧版），但已不阻塞本插件 |
 
 ## 12. 排错手册
 
@@ -445,8 +452,8 @@ profile 清单 %USERPROFILE%\.dsh\profiles\<profile>\package.json（dependencies
 | 症状 | 原因 | 解法 |
 |---|---|---|
 | 插件卡片下压根没有「配置」区 | 没有任何包为 `plugins.bundle.config` 注册这个包名的页面 | 确认装的是 0.4.0+（包内有 `lib/client.js`），然后**重启** DSH：客户端模块系统把包元数据缓存到进程重启为止 |
-| 页面出现，但顶部是「配置表单不可用」 | 浏览器半拿不到 `configForms` 服务（设置 / 配置编辑器没挂载），或该 profile 条目没有 volatile 字段 | 确认组合里有 `@deepseek-ai/dsh-settings` 与 `@deepseek-ai/dsh-config-editor`；确认装的是 0.4.0+（0.4.0 起字段才是 volatile） |
-| 顶部是「配置表单不可用」，但服务都在 | 该条目解析到的 `@deepseek-ai/schemastery` 是**旧版**（无 `Schema.prototype.volatile`）→ 字段没被标记为 volatile | 跑 `node tools/doctor.mjs --dir <部署目录>`，看 `volatile` 行：0 个字段 = 就是这个原因。插件本身仍能加载（`markVolatile` 是能力探测），要恢复可编辑需升级那个 schemastery 副本 |
+| 页面出现，但顶部是「配置表单不可用」 | 浏览器半拿不到 `configForms` 服务（设置 / 配置编辑器没挂载） | 确认组合里有 `@deepseek-ai/dsh-settings` 与 `@deepseek-ai/dsh-config-editor`；`logger` 行没有「using the bundled schemastery」时，问题在服务而不在 schema |
+| 顶部是「配置表单不可用」，但服务都在 | 该 profile 条目解析到的 `@deepseek-ai/schemastery` 是**旧版**（无 `Schema.prototype.volatile`）→ 字段没被标记为 volatile（0.4.0 的真实故障） | 0.4.1+ 已内置兜底：`selectSchema()` 会换用 `lib/vendor/schemastery.mjs`，页面照常可编辑。验证方式：`node tools/doctor.mjs --dir <部署目录>` 的 `volatile` 行应为 17，且 `logger` 行出现「using the bundled schemastery」。要根治宿主那一层，把 `profiles/node_modules/@deepseek-ai/schemastery` 换回与 DSH 应用同版本的副本 |
 | 顶部是「只读」 | 表单 `writable:false`，通常是 profile 的 `cordis.patch.yml` 或命令行 overlay 覆盖了同一批字段 | 属预期行为：覆盖层优先级更高，请在覆盖层里改，或先删掉覆盖 |
 | 保存了但行为不变 | 只有 `enableDaily` / `enableVto` 会这样，它们是加载期决策 | 重载插件或重启；其余字段保存即生效（读的是 `liveConfig`） |
 
@@ -492,6 +499,7 @@ profile 清单 %USERPROFILE%\.dsh\profiles\<profile>\package.json（dependencies
 
 - **0.1.0**：两条命令线、guard/policy/备份回滚、本地页图、bundled 上游数据。9 工具 + 11 技能（其中 8 个是上游文本，从未被引用）。
 - **0.2.0**：把资产变成承重件。注册技能 11 → 3（上游文本转只读参考）；路径基准统一（此前 `file`/`pdf` 的包含性检查对被写目标之外的一棵树做）；`state.json` v2 + **缺陷台账**；四份数据接上消费者（模板/语义上限/章节下限/角色路由）；`parse` 从空承诺变成受门禁的真实调用；编译驱动改为 latexmk 优先 + `via`/`stopReason`；报告去掉错值（时间戳冒充哈希、不存在的 agent 段落）。
+- **0.4.1**：配置页在「宿主解析到旧 schemastery」的部署上不再静默只读。`selectSchema()` 在宿主副本缺 `.volatile()` 时换用 `lib/vendor/` 里从 DSH 运行时取出的 schemastery+cosmokit（仅改写一行 import），跨副本靠 `Symbol.for("cosmokit.volatile.write")` 互通；正常宿主仍用宿主副本。THIRD_PARTY_NOTICES 补齐归属，并把已删除的 `voidetect.js` 段落改成历史说明。
 - **0.4.0**：把配置搬到插件面板。17 个字段全部 `.volatile()`，`apply` 改读 `liveConfig()`（属性访问时才读，保存即生效）；新增浏览器半 `lib/client.js`（lazy-CJS 工厂、只 `require("react")`），注册 `plugins.bundle.config` 与 `plugins.row.config` 两个槽位；新增 `locale/` 展示元信息、`icon.svg`、`npm run preview` 静态预览、`test/client.test.mjs`（最小 React/DOM shim 真跑 bundle）。
 - **0.3.0**：删掉只像承重件的部分。删除 `voidetect.js`（见 §14）与每次调用都刷的「分类法自检」告警；报告改为直接生成（去掉模板/占位符，修掉重复表头与恒为 0 的进度表，进度改由台账计算）；回滚做成真动作（`vto_rollback`）；统一 latexmk 的三处矛盾说法；README 增「环境要求与自助安装」；docs 合并为本文件 + 索引。
 

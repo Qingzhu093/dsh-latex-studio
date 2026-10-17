@@ -11,14 +11,9 @@ Vendored: `config/vto_taxonomy.yaml`, `config/layout_rules.yaml`, `config/conten
 YAML are no longer part of this repository — the JSON under `lib/data/` is the only form of this data
 here, and the provenance above plus `docs/upstream/paperfit/MANIFEST.json` is the record of origin).
 
-Re-implemented (not copied): `lib/core/voidetect.js` is a behaviour-equivalent port of
-`scripts/detect_column_void.py` (page-image column-void detection, algorithm reference lines
-149-243: Otsu ink threshold, row-wise ink projection with moving average, void segmentation and
-merging, gutter search, Sobel line-height estimation, `a5_candidates` output). The upstream script
-requires `opencv-python-headless` + `numpy`; this port uses only Node built-ins (`zlib`) because the
-package keeps `dependencies: {}`. One intentional semantic difference is documented in the module:
-the upstream script always splits the page into two columns, whereas this port abstains from void
-detection for single-column layouts (A5 is defined for two-column layouts only).
+Historical (removed in 0.3.0): `lib/core/voidetect.js` was a behaviour-equivalent port of
+`scripts/detect_column_void.py`. It was deleted because its only contribution was a trailing-blank
+metric that measured the wrong thing; no vendored code from that port remains in this package.
 
 Methodology reference: PaperFit, arXiv:2605.10341, UCAS / Shanghai AI Laboratory / SJTU.
 
@@ -41,6 +36,22 @@ Provenance, per-file source hashes and the upstream version are recorded in
 (`npm run vendor-specs -- --from <paperfit-cli-dir>`; `--check` fails on drift).
 Note: `skills/latex_fixers/` (Python) is deliberately NOT vendored — it is implementation, not
 specification, and this package keeps `dependencies: {}`.
+
+## @deepseek-ai/schemastery + @deepseek-ai/cosmokit (DeepSeek Harness / Shigma) — MIT
+Vendored verbatim under `lib/vendor/schemastery.mjs`, `lib/vendor/cosmokit.mjs` and
+`lib/vendor/LICENSE`, extracted from the DeepSeek Harness 0.2.1-rc.2 desktop runtime
+(`schemastery` 3.18.4, `cosmokit` 1.8.5). Exactly one edit was applied: the schema module's
+`@deepseek-ai/cosmokit` import is rewritten to the sibling `./cosmokit.mjs`, so the bundled copy
+stays self-contained.
+
+Reason: the DSH settings service only projects **volatile** config fields into an editable form, and
+`Schema.prototype.volatile` does not exist in every `@deepseek-ai/schemastery` copy a host may
+resolve. Measured case: a profile-level peer tree left behind by an old global DSH install resolved
+3.18.2, which has no volatile support — the plugin's configuration page was permanently read-only
+there. `selectSchema()` in `lib/index.js` uses the host copy when it supports volatile (the normal
+case, keeping schema envelopes in sync with the running host) and this bundled copy otherwise.
+Volatile references stay interoperable across copies because cosmokit identifies them with
+`Symbol.for("cosmokit.volatile.write")`.
 
 ## dsh-latex-guard (https://github.com/Flan246/dsh-latex-guard) — MIT
 Re-implemented (not copied): the BibTeX parse / lint / fill / cite-audit behaviour and the
