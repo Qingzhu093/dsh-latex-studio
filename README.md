@@ -324,3 +324,10 @@ npm run verify:package
 - 本项目采用 [MIT License](LICENSE) 开源。
 - 视觉排版优化（VTO）的分类学、数值阈值与方法学参考源自论文 **PaperFit**（arXiv:2605.10341，UCAS / Shanghai AI Laboratory / SJTU，MIT 许可）。
 - 详细第三方规范与代码归属声明请参阅 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+---
+
+本项目的开发、调试与文档验证大量使用 **DeepSeek Harness** 完成，其中很多模块由 **deepseek-flash** 模型参与构建。
+
+[![](https://img.shields.io/badge/powered_by-dsh-4D6BFE?style=flat-square&logo=deepseek&logoColor=white)](https://github.com/deepseek-ai/deepseek-harness)
+
