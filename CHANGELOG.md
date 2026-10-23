@@ -5,7 +5,13 @@ range a breaking change moves the MINOR number.
 
 ## 0.4.2 — 2026-10-23
 
-Refine documentation for human readability, fix bib_tool reporting typo, and complete the 10-tool matrix.
+Refine documentation for human readability, fix bib_tool reporting typo, complete the 10-tool matrix, and add all-in-one environment setup assistance for first-time onboarding.
+
+### Added
+
+- **First-time onboarding & all-in-one setup guide in `latex-daily` skill**: Instructs the Agent to assist users with setting up the entire LaTeX toolchain at once (MiKTeX engine/bib/renderers + Strawberry Perl for latexmk acceleration + chktex + AutoInstall package completion) rather than reporting missing pieces piecemeal.
+- **One-click environment setup script (`tools/setup-latex-stack.ps1`)**: Windows PowerShell script for fully unattended, one-stop installation and verification.
+- **All-in-one setup recommendation in `latex_doctor`**: When components are missing, doctor output directly provides the batch setup script command alongside individual recommendations.
 
 ### Fixed
 

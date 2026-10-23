@@ -42,6 +42,7 @@
     "tools/verify-package.mjs",
     "tools/doctor.mjs",
     "tools/install.mjs",
+    "tools/setup-latex-stack.ps1",
     "cordis.patch.yml",
     "README.md",
     "LICENSE",
@@ -94,6 +95,7 @@
   "scripts": {
     "test": "node test/run-all.mjs",
     "doctor": "node tools/doctor.mjs",
+    "setup-env": "powershell -ExecutionPolicy Bypass -File tools/setup-latex-stack.ps1",
     "install-plugin": "node tools/install.mjs",
     "preview": "node tools/build-preview.mjs",
     "verify:package": "node tools/verify-package.mjs",

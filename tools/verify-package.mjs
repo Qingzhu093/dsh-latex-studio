@@ -66,6 +66,7 @@ const ALLOWED = [
   /^skills\/[^/]+\/SKILL\.md$/,
   /^test\/.*/,
   /^tools\/(doctor|install|build-preview|verify-package|verify-pdf-read|vendor-paperfit-specs)\.mjs$/,
+  /^tools\/setup-latex-stack\.ps1$/,
 ]
 
 /** Entries the tarball must carry for the plugin to load and behave. */
