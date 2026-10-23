@@ -114,10 +114,12 @@ export async function renderPages({ pdfPath, pages='all', dpi=150, outDir, confi
 ## 9. lib/core/state.js
 ```js
 export function newState({ dir, entry, pageBudget, template, columnType, uploadScope })
-export function loadState(workDir) / saveState(workDir, state)
+export function loadState(workDir) / loadStateSafe(workDir) / saveState(workDir, state)
+export function withLedger(state) / upsertLedger(state, defects, round)
 export function nextRound(state) -> state
-export function backupFiles(workDir, round, files) -> string[]
+export function backupFiles(workDir, round, files, options) -> string[]
 export function rollback(workDir, round) -> string[]
+export function readBackupManifest(workDir, round) -> object
 export function recordRound(workDir, round, payload) -> string
 ```
 目录：`<proj>/<workDir>/{state.json,build/,auxfiles/,pages/,reports/,backups/rN/}`（**禁用 `aux`：Windows 保留设备名**）
@@ -131,7 +133,7 @@ export function writeRoundReport(workDir, round, data) -> { jsonPath, mdPath }
 ## 11. lib/tools/daily.js / lib/tools/vto.js
 ```js
 export function registerDaily(ctx, config)   // latex_doctor, latex_build, latex_lint, bib_tool
-export function registerVto(ctx, config)     // vto_start, vto_inspect, vto_fix, vto_verify, vto_report
+export function registerVto(ctx, config)     // vto_start, vto_inspect, vto_fix, vto_verify, vto_report, vto_rollback
 ```
 用 `defineTool` from `@deepseek-ai/dsh-tools`；`output.schema` 为 JSON Schema 片段；`output.render(args,value)` 返回 `ContentBlock[]`（文本或 `{type:'image',...}`）。
 工具入参按 **基准** 解析（0.2.0 冻结，`test/params.test.mjs` 强制）：
@@ -165,7 +167,8 @@ export function apply(ctx, config)   // 按 enableDaily/enableVto 注册
 - 所有写操作：先备份 → 写 → 校验 → 失败回滚。
 - 路径含空格与中文必须可用（本工作区即是）。
 - 每个 core 模块自带 `test/*.test.mjs`（node:test）。
-## 13. 各模块的可选扩展（超集，允许存在；不是必填契约）
+
+## 14. 各模块的可选扩展（超集，允许存在；不是必填契约）
 实现方可以在不改动上面已冻结字段的前提下追加字段；调用方必须容忍它们缺席。已知扩展：
 - `guard.verifySnapshot()` 额外返回 `protectedLost` / `drift` / `warnings`；
 - `renderPages()` 的 `RenderResult` 额外返回 `attempts` / `pageCount` / `pageCountSource` / `rendererDowngrade`；
@@ -173,7 +176,7 @@ export function apply(ctx, config)   // 按 enableDaily/enableVto 注册
 - `latex_doctor` 追加 `verifyPdfRead` / `pdfPath` 入参与 `renderProbe` 出参（见 §11）；
 - `latex_lint` 的 `external.chktex` 取值细化为 `used` / `skipped` / `unavailable`，由 `config.enableChktex`（默认 false）控制。
 
-## 14. 已知未验证项（交付时如实标注，不得写成已通过）
+## 15. 已知未验证项（交付时如实标注，不得写成已通过）
 - `bib_tool action=fill` 依赖 Crossref 联网，本机未做成功路径验证；失败时返回 `ok:false` + `error.code=CROSSREF_UNAVAILABLE`，不抛异常、不编造数据。
 - ~~MiKTeX `--enable-installer`~~ **已实测通过（2026-10-11）**：`gnuplottex` 经文件级检查确认缺失 → 用 pdflatex **不带任何 installer 参数**编译（全局 `[MPM]AutoInstall=1`）→ exit 0、产出 14330 B PDF、`gnuplottex.sty` 随即出现（15.1 s，含下载）。
 - `read_pdf({ view: page })`（MinerU 插件）在本机持续报 `PDF.js returned invalid page metadata`，因此 **不作为** 视觉通道依赖，仅作第三级回落。

@@ -29,7 +29,7 @@ node tools/install.mjs             # 打包 → 注册 profile → 镜像 → �
 
 **是**：一个 DSH **bundle**（`dsh.bundle.patch`）、一套可验证闭环、一个能力消费者（只用宿主的 `tools`，可选桥接 `read_pdf`）。
 
-**不是**：不是客户端插件（无 UI 半边）；不是 TeX 发行版管理器（只调用 MiKTeX）；不是排版算法库（视觉判断交给模型看页图）；不是 PDF 解析器（结构化解析委托 MinerU）。
+**不是**：不是独立富客户端应用（仅在插件面板提供轻量 React 配置页，无复杂绘图 Canvas）；不是 TeX 发行版管理器（只调用 MiKTeX）；不是排版算法库（视觉判断交给模型看页图）；不是 PDF 解析器（结构化解析委托 MinerU）。
 
 ### 1.3 硬约束优先级（来自 PaperFit 论文，不可违反）
 
@@ -349,7 +349,7 @@ $tmp = Join-Path $env:TEMP 'dsh-latex-studio-clone'
 git clone git@github.com:Qingzhu093/dsh-latex-studio.git $tmp   # SSH：本机 HTTPS 会走 DevSidecar 代理并 ECONNRESET
 # 本机 ~/.npmrc 里的 proxy/https-proxy 指向 DevSidecar，npm 会 500；用一份关掉代理的 userconfig：
 npm install --userconfig <proxy=null 的 npmrc> --no-audit --no-fund
-npm test                 # 期望 147/147，0 failed 0 skipped
+npm test                 # 期望 149/149，0 failed 0 skipped
 npm run verify:package   # 期望 PACKAGE OK
 ```
 

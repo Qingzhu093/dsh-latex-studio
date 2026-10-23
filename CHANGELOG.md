@@ -3,6 +3,16 @@
 All notable changes to `dsh-latex-studio`. Versioning follows semver; in the 0.x
 range a breaking change moves the MINOR number.
 
+## 0.4.2 — 2026-10-23
+
+Refine documentation for human readability, fix bib_tool reporting typo, and complete the 10-tool matrix.
+
+### Fixed
+
+- **Fixed `bib_tool` console output typo**: `missingInBib` was misspelled as `missinInBib` in `daily.js`.
+- **Completed tool matrix**: Added `vto_rollback` to `README.md` and `docs/INTERFACES.md` tool tables and maps.
+- **Documentation alignment**: Fully rewrote `README.md` to remove AI tone and conversational filler, reorganize sections for human developer usability, and provide actionable walkthroughs with natural language prompt examples.
+
 ## 0.4.1 — 2026-10-17
 
 Fix the configuration page being permanently read-only on a host whose peer tree
