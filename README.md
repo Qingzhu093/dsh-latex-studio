@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node: ^22.19.0 || >=24.0.0](https://img.shields.io/badge/Node-%3E%3D22.19.0%20%7C%7C%20%3E%3D24.0.0-blue.svg)](https://nodejs.org/)
-[![DSH: >=0.2.0-rc.2](https://img.shields.io/badge/DSH-%3E%3D0.2.0--rc.2-purple.svg)](https://github.com/Qingzhu093/dsh-latex-studio)
+[![DSH: >=0.2.0-rc.2 (tested on v0.2.1-rc.5)](https://img.shields.io/badge/DSH-%3E%3D0.2.0--rc.2%20(v0.2.1--rc.5%20ready)-purple.svg)](https://github.com/Qingzhu093/dsh-latex-studio)
 [![Platform: Windows + MiKTeX](https://img.shields.io/badge/Platform-Windows%20%2B%20MiKTeX-green.svg)](https://miktex.org/)
 
 **dsh-latex-studio** 是专为 **DeepSeek Harness (DSH) 桌面端** 打造的 MiKTeX 原生 LaTeX 编译诊断与视觉排版优化（VTO）闭环插件。

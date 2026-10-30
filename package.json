@@ -1,6 +1,6 @@
 {
   "name": "dsh-latex-studio",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "MiKTeX-native LaTeX compile & VTO typesetting loop for DeepSeek Harness (daily compile + visual typesetting loop with a persistent defect ledger).",
   "type": "module",
   "main": "./lib/index.js",

@@ -3,6 +3,19 @@
 All notable changes to `dsh-latex-studio`. Versioning follows semver; in the 0.x
 range a breaking change moves the MINOR number.
 
+## 0.4.3 — 2026-10-30
+
+DeepSeek Harness v0.2.1-rc.5 runtime compatibility verification, documentation optimization, and clean release packaging.
+
+### Added
+
+- **DSH v0.2.1-rc.5 Compatibility & Verification**: Validated full interoperability with DeepSeek Harness v0.2.1-rc.5 (PR #7484 / commit 534dac8c), specifically supporting the new reasoning-text clean-up engine and zero-artifact reasoning disclosures in desktop UI.
+- **Full Test Suite Pass**: All 12 test suites (149 integration and unit tests covering daily compilation, VTO typography loops, defect ledgers, and client configuration) pass cleanly on the rc.5 runtime.
+
+### Changed
+
+- **Documentation & Release Packaging**: Updated README and package metadata targeting the latest DSH desktop release.
+
 ## 0.4.2 — 2026-10-23
 
 Refine documentation for human readability, fix bib_tool reporting typo, complete the 10-tool matrix, and add all-in-one environment setup assistance for first-time onboarding.
