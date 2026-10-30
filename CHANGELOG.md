@@ -3,6 +3,14 @@
 All notable changes to `dsh-latex-studio`. Versioning follows semver; in the 0.x
 range a breaking change moves the MINOR number.
 
+## 0.4.4 — 2026-10-30
+
+Enhance GUI configuration form detection and namespace resilience in DeepSeek Harness desktop.
+
+### Fixed
+
+- **Active Namespace Probing in `lib/client.js`**: Proactively iterate and test candidate settings namespaces against `configForms.get()` instead of blind falling back, completely eliminating the "Configuration form unavailable" warning in the DSH Plugins manager.
+
 ## 0.4.3 — 2026-10-30
 
 DeepSeek Harness v0.2.1-rc.5 runtime compatibility verification, documentation optimization, and clean release packaging.
