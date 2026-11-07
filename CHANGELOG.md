@@ -3,6 +3,16 @@
 All notable changes to `dsh-latex-studio`. Versioning follows semver; in the 0.x
 range a breaking change moves the MINOR number.
 
+## 0.4.5 — 2026-11-07
+
+DeepSeek Harness v0.2.2 runtime compatibility adaptation, verified full interoperability, and test suite green.
+
+### Added
+
+- **DeepSeek Harness v0.2.2 Compatibility & Verification**: Fully verified compatibility with the DeepSeek Harness v0.2.2 runtime release (including v0.2.2-rc.1 and Node 24 baseline).
+- **Test Suite Consistency**: All 12 test suites (149 integration and unit tests covering compiler driver, VTO loop, defect ledger, and client configuration forms) pass with 100% success rate on the DSH 0.2.2 host.
+- **Responsive Layout & Custom Plugin Index Adaptability**: Ensured client configuration forms render smoothly and remain stable within DSH 0.2.2's newly revamped responsive mobile/tablet layout and the upgraded Custom Plugin Index architecture.
+
 ## 0.4.4 — 2026-10-30
 
 Enhance GUI configuration form detection and namespace resilience in DeepSeek Harness desktop.
